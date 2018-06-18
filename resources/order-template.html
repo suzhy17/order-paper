@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>발주서</title>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+	<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+	<style type="text/css">
+		#tabs-left {
+			position: relative;
+			padding-left: 6.5em;
+		}
+		#tabs-left .ui-tabs-nav {
+			position: absolute;
+			left: 0.25em;
+			top: 0.25em;
+			bottom: 0.25em;
+			width: 6em;
+			padding: 0.2em 0 0.2em 0.2em;
+		}
+		#tabs-left .ui-tabs-nav li {
+			right: 1px;
+			width: 100%;
+			border-right: none;
+			border-bottom-width: 1px !important;
+			-moz-border-radius: 4px 0px 0px 4px;
+			-webkit-border-radius: 4px 0px 0px 4px;
+			border-radius: 4px 0px 0px 4px;
+			overflow: hidden;
+		}
+		#tabs-left .ui-tabs-nav li.ui-tabs-selected,
+		#tabs-left .ui-tabs-nav li.ui-state-active {
+			border-right: 1px solid transparent;
+		}
+		#tabs-left .ui-tabs-nav li a {
+			float: right;
+			width: 100%;
+			text-align: right;
+		}
+		#tabs-left .ui-tabs-panel {
+			height: 40em;
+		}
+		.ui-widget.ui-widget-content {
+			border: 0;
+		}
+	</style>
+	<style type="text/css" id="orderArea">
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+
+		table, th, td {
+			border: 1px solid black;
+		}
+
+		td {
+			text-align: center;
+		}
+
+		td.text-right {
+			text-align: right;
+			padding-right: 10px;
+		}
+
+		td.bg-orange {
+			background-color: orange;
+		}
+
+		td.bg-aquamarine {
+			background-color: aquamarine;
+		}
+
+		td.bg-yellow {
+			background-color: yellow;
+		}
+
+		tr.qty {
+			height: 20px;
+			background-color: cornsilk;
+		}
+
+		img.thumbnail {
+			width: auto;
+			height: 120px;
+		}
+
+		.text-red {
+			color: red;
+		}
+
+		.text-center {
+			text-align: center;
+		}
+
+		.text-right {
+			text-align: right;
+		}
+
+		a {
+			text-decoration: none !important;
+		}
+
+		#previewLayer {
+			border: 1px solid;
+			padding: 10px;
+			box-shadow: 5px 5px 8px gray;
+		}
+
+		.template-tab > div {
+			padding-bottom: 20px;
+			text-align: center;
+		}
+	</style>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+</head>
+
+<body>
+
+<div id="tabs-left">
+	<ul>
+		<li><a href="#tabs-oderlist"><b>발주서</b></a></li>
+		<li><a href="#tabs-black">블랙</a></li>
+		<li><a href="#tabs-twink">트윙클</a></li>
+	</ul>
+	<div id="tabs-oderlist">
+		<div id="print-area">
+			<table>
+				<colgroup>
+					<col style="width: 40%">
+					<col style="width: 15%">
+					<col style="width: 15%">
+					<col style="width: 15%">
+					<col style="width: 15%">
+				</colgroup>
+				<tbody>
+				<tr>
+					<th rowspan="2"><h3>디팍스 매장 발주서</h3></th>
+					<th>매장명</th>
+					<th>발주날짜</th>
+					<th>출고날짜</th>
+					<th>확인</th>
+				</tr>
+				<tr>
+					<td>홍대2호점</td>
+					<td>5월2일</td>
+					<td></td>
+					<td></td>
+				</tr>
+				</tbody>
+			</table>
+
+			<br>
+
+			<table>
+				<colgroup>
+					<col style="width: 20%">
+					<col style="width: 20%">
+					<col style="width: 20%">
+					<col style="width: 20%">
+					<col style="width: 20%">
+				</colgroup>
+				<thead>
+				<tr>
+					<th>종류</th>
+					<th>품목코드</th>
+					<th>기종</th>
+					<th>수량</th>
+					<th>상판</th>
+				</tr>
+				</thead>
+				<tbody>
+				<tr><td rowspan="9">블랙케이스</td>
+					<td>00420</td><td><a href="#black-ip5">아이폰5</a></td><td class="text-right">2</td><td></td></tr>
+				<tr><td>00386</td><td><a href="#black-ip6">아이폰6</a></td><td class="text-right">12</td><td></td></tr>
+				<tr><td>00410</td><td><a href="#black-ip7">아이폰7</a></td><td class="text-right">23</td><td></td></tr>
+				<tr><td>00411</td><td><a href="#black-ip7p">아이폰7+</a></td><td class="text-right">5</td><td></td></tr>
+				<tr><td>00450</td><td><a href="#black-ipfx">아이폰X</a></td><td class="text-right">4</td><td></td></tr>
+				<tr><td>00414</td><td><a href="#black-gs8">갤럭시S8</a></td><td class="text-right">2</td><td></td></tr>
+				<tr><td>00416</td><td><a href="#black-gs8p">갤럭시S8+</a></td><td class="text-right">3</td><td></td></tr>
+				<tr><td>00417</td><td><a href="#black-gn5">갤럭시노트5</a></td><td class="text-right">1</td><td></td></tr>
+				<tr><td>00419</td><td><a href="#black-gn8">갤럭시노트8</a></td><td class="text-right">2</td><td></td></tr>
+				<tr>
+					<td colspan="3" class="bg-orange">트윙클케이스 합계</td>
+					<td class="bg-orange text-right">54</td>
+					<td class="bg-orange"></td>
+				</tr>
+
+				<tr>
+					<td rowspan="10">트윙클케이스</td>
+					<td>00479</td><td>아이폰5   </td><td class="text-right">7</td><td></td></tr>
+				<tr><td>00480</td><td>아이폰6   </td><td class="text-right">11</td><td></td></tr>
+				<tr><td>00482</td><td>아이폰7   </td><td class="text-right">18</td><td></td></tr>
+				<tr><td>00483</td><td>아이폰7+  </td><td class="text-right">18</td><td></td></tr>
+				<tr><td>00493</td><td>아이폰X   </td><td class="text-right">6</td><td></td></tr>
+				<tr><td>00488</td><td>갤럭시S8  </td><td class="text-right">6</td><td></td></tr>
+				<tr><td>00489</td><td>갤럭시S8+ </td><td class="text-right">6</td><td></td></tr>
+				<tr><td>00711</td><td>갤럭시S9+ </td><td class="text-right">1</td><td></td></tr>
+				<tr><td>00490</td><td>갤럭시노트5 </td><td class="text-right">3</td><td></td></tr>
+				<tr><td>00492</td><td>갤럭시노트8 </td><td class="text-right">3</td><td></td></tr>
+				<tr>
+					<td colspan="3" class="bg-orange">트윙클케이스 합계</td>
+					<td class="bg-orange text-right">79</td>
+					<td class="bg-orange"></td>
+				</tr>
+
+				<tr>
+					<td rowspan="4">강화유리</td>
+					<td></td><td>아이폰5	</td><td class="text-right">5</td><td></td></tr>
+				<tr><td></td><td>아이폰7	</td><td class="text-right">20</td><td></td></tr>
+				<tr><td></td><td>아이폰7+	</td><td class="text-right">10</td><td></td></tr>
+				<tr><td></td><td>아이폰X	</td><td class="text-right">10</td><td></td></tr>
+				<tr>
+					<td colspan="3" class="bg-aquamarine">강화유리 합계</td>
+					<td class="bg-aquamarine text-right">45</td>
+					<td class="bg-aquamarine"></td>
+				</tr>
+
+				<tr>
+					<td rowspan="2">보조배터리</td>
+					<td>00407</td><td>5000mAh</td><td class="text-right">11</td><td></td></tr>
+				<tr><td>00508</td><td>10000mAh</td><td class="text-right">2</td><td></td></tr>
+				<tr>
+					<td colspan="3" class="bg-aquamarine">보조배터리 합계</td>
+					<td class="bg-aquamarine text-right">13</td>
+					<td class="bg-aquamarine"></td>
+				</tr>
+
+				<tr>
+					<td rowspan="5">풀커버</td>
+					<td></td><td>갤럭시노트8(F)</td><td class="text-right">10</td><td></td></tr>
+				<tr><td></td><td>갤럭시S8(F) </td><td class="text-right">10</td><td></td></tr>
+				<tr><td></td><td>갤럭시S8P(F)</td><td class="text-right">10</td><td></td></tr>
+				<tr><td></td><td>갤럭시S9(F) </td><td class="text-right">10</td><td></td></tr>
+				<tr><td></td><td>갤럭시S9P(F)</td><td class="text-right">10</td><td></td></tr>
+				<tr>
+					<td colspan="3" class="bg-aquamarine">풀커버 합계</td>
+					<td class="bg-aquamarine text-right">50</td>
+					<td class="bg-aquamarine"></td>
+				</tr>
+				</tbody>
+			</table>
+			<table>
+				<colgroup>
+					<col style="width: 20%">
+					<col style="width: 20%">
+					<col style="width: 20%">
+					<col style="width: 20%">
+					<col style="width: 20%">
+				</colgroup>
+				<tbody>
+				<tr>
+					<td colspan="3">인쇄수량</td>
+					<td class="bg-yellow text-right">235</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td colspan="3" class="bg-orange">총 수량(인쇄+소모품)</td>
+					<td colspan="2" class="bg-orange text-right">330</td>
+				</tr>
+				<tr>
+					<td colspan="3" class="bg-orange">총 금액(VAT포함)</td>
+					<td colspan="2" class="bg-orange text-right">2,542,650</td>
+				</tr>
+				</tbody>
+				<tfoot>
+				</tfoot>
+			</table>
+			<br>
+		</div>
+	</div>
+	<div id="tabs-black" class="template-tab">
+		<div>
+			<table id="black-ip5">
+				<colgroup>
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+				</colgroup>
+				<tbody>
+				<tr>
+					<th colspan="10" class="text-red">iPhone 5 블랙케이스</th>
+				</tr>
+				<tr>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_1.jpg" class="thumbnail"></td>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_2.jpg" class="thumbnail"></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr class="qty">
+					<td>1</td>
+					<td>1</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				</tbody>
+			</table>
+			<button type="button" name="templatePrint">인쇄</button>
+		</div>
+		<div>
+			<table id="black-ip6">
+				<colgroup>
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+				</colgroup>
+				<tbody>
+				<tr>
+					<th colspan="10" class="text-red">아이폰6/6s 블랙케이스</th>
+				</tr>
+				<tr>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_1.jpg" class="thumbnail"></td>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_2.jpg" class="thumbnail"></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr class="qty">
+					<td>9</td>
+					<td>3</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				</tbody>
+			</table>
+			<button type="button" name="templatePrint">인쇄</button>
+		</div>
+		<div>
+			<table id="black-ip7">
+			<colgroup>
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+			</colgroup>
+			<tbody>
+			<tr>
+				<th colspan="10" class="text-red">아이폰7 블랙케이스</th>
+			</tr>
+			<tr>
+				<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_1.jpg" class="thumbnail"></td>
+				<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_2.jpg" class="thumbnail"></td>
+			<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+			</tr>
+			<tr class="qty">
+				<td>11</td>
+				<td>12</td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+			</tr>
+			</tbody>
+		</table>
+			<button type="button" name="templatePrint">인쇄</button>
+		</div>
+		<div>
+			<table id="black-ip7p">
+				<colgroup>
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+				</colgroup>
+				<tbody>
+				<tr>
+					<th colspan="10" class="text-red">아이폰7+ 블랙케이스</th>
+				</tr>
+				<tr>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_1.jpg" class="thumbnail"></td>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_2.jpg" class="thumbnail"></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr class="qty">
+					<td>1</td>
+					<td>4</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				</tbody>
+			</table>
+			<button type="button" name="templatePrint">인쇄</button>
+		</div>
+		<div>
+			<table id="black-ipfx">
+				<colgroup>
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+				</colgroup>
+				<tbody>
+				<tr>
+					<th colspan="10" class="text-red">아이폰X 블랙케이스</th>
+				</tr>
+				<tr>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_1.jpg" class="thumbnail"></td>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_2.jpg" class="thumbnail"></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr class="qty">
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				</tbody>
+			</table>
+			<button type="button" name="templatePrint">인쇄</button>
+		</div>
+		<div>
+			<table id="black-gs8">
+				<colgroup>
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+				</colgroup>
+				<tbody>
+				<tr>
+					<th colspan="10" class="text-red">갤럭시s8 블랙케이스</th>
+				</tr>
+				<tr>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_1.jpg" class="thumbnail"></td>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_2.jpg" class="thumbnail"></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr class="qty">
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				</tbody>
+			</table>
+			<button type="button" name="templatePrint">인쇄</button>
+		</div>
+		<div>
+			<table id="black-gs8p">
+				<colgroup>
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+				</colgroup>
+				<tbody>
+				<tr>
+					<th colspan="10" class="text-red">갤럭시s8+ 블랙케이스</th>
+				</tr>
+				<tr>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_1.jpg" class="thumbnail"></td>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_2.jpg" class="thumbnail"></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr class="qty">
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				</tbody>
+			</table>
+			<button type="button" name="templatePrint">인쇄</button>
+		</div>
+		<div>
+			<table id="black-gn5">
+				<colgroup>
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+				</colgroup>
+				<tbody>
+				<tr>
+					<th colspan="10" class="text-red">갤럭시노트5 블랙케이스</th>
+				</tr>
+				<tr>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_1.jpg" class="thumbnail"></td>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_2.jpg" class="thumbnail"></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr class="qty">
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				</tbody>
+			</table>
+			<button type="button" name="templatePrint">인쇄</button>
+		</div>
+		<div>
+			<table id="black-gn8">
+				<colgroup>
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+					<col style="width: 10%">
+				</colgroup>
+				<tbody>
+				<tr>
+					<th colspan="10" class="text-red">갤럭시노트8 블랙케이스</th>
+				</tr>
+				<tr>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_1.jpg" class="thumbnail"></td>
+					<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_2.jpg" class="thumbnail"></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr class="qty">
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				</tbody>
+			</table>
+			<button type="button" name="templatePrint">인쇄</button>
+		</div>
+	</div>
+	<div id="tabs-twink">
+		<table id="twink-ip6">
+			<colgroup>
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+				<col style="width: 10%">
+			</colgroup>
+			<tbody>
+			<tr>
+				<th colspan="10" class="text-red">iPhone 6플러스 트윙클케이스</th>
+			</tr>
+			<tr>
+				<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_1.jpg" class="thumbnail"></td>
+				<td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_2.jpg" class="thumbnail"></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+			</tr>
+			<tr class="qty">
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<br>
+
+<div>
+	<button type="button" id="btnPrint" class="ui-button ui-widget ui-corner-all">발주서 인쇄</button>
+</div>
+
+<div id="previewLayer" style="background-color: whitesmoke; position: absolute; top: 100px; left: 200px; display: none;">
+	<div></div>
+	<p class="text-center"><button type="button" id="previewClose" class="ui-button ui-widget ui-corner-all">닫기</button></p>
+</div>
+
+<script type="text/javascript">
+	$(document).ready(function () {
+		$('#tabs-left').tabs();
+
+		var $previewLayer = $('#previewLayer');
+
+		$('#print-area a').click(function (event) {
+			event.preventDefault();
+
+//			var left = ( $(window).scrollLeft() + ( $(window).width() - $previewLayer.width()) / 2 );
+//			var top = ( $(window).scrollTop() + ( $(window).height() - $previewLayer.height()) / 2 );
+//			$previewLayer.css("top", top);
+//			$previewLayer.css("left", left);
+
+			var templateDevice = $(this).attr('href');
+			$previewLayer.find('div').html($(templateDevice).html());
+			$previewLayer.show();
+		});
+
+		$('#previewClose').click(function (event) {
+			event.preventDefault();
+			$previewLayer.hide();
+		});
+
+		$('#btnPrint').click(function () {
+			printElement('<div>' + $('#print-area').html() + '</div>');
+		});
+
+		$('button[name="templatePrint"]').click(function () {
+			printElement('<table>' + $(this).siblings('table').html() + '</table>');
+		});
+
+		function printElement(txt) {
+			var mywindow = window.open('', 'PRINT', 'height=800,width=800');
+
+			mywindow.document.write('<html><head><title>발주서</title><style>');
+			mywindow.document.write($('#orderArea').text());
+			mywindow.document.write('</style></head><body>');
+			mywindow.document.write(txt);
+			mywindow.document.write('</body></html>');
+
+			mywindow.document.close(); // necessary for IE >= 10
+			mywindow.focus(); // necessary for IE >= 10*/
+
+//		mywindow.print();
+//		mywindow.close();
+
+			return true;
+		}
+
+
+	});
+
+</script>
+</body>
+</html>

@@ -1,23 +1,52 @@
+'use strict';
+
 const fs = require('fs');
-//var handsontable = require('handsontable');
 XLSX = require('xlsx');
 
+const templates = new Map([
+  ['BLACK' , '블랙케이스'],
+  ['SPRIT' , '스피릿케이스'],
+  ['SOFTT' , '소프트케이스'],
+  ['TWINK' , '트윙클케이스']
+]);
 
-var gridData = [];
+const devices = new Map();
+devices.set('IP5', '아이폰5');
+devices.set('IP6', '아이폰6');
+devices.set('IP7', '아이폰7');
+devices.set('IP7P', '아이폰7+');
+devices.set('IP8', '아이폰8');
+devices.set('IP8P', '아이폰8+');
+devices.set('IPFX', '아이폰X');
+devices.set('GS7', '갤럭시S7');
+devices.set('GS7P', '갤럭시S7+');
+devices.set('GS8', '갤럭시S8');
+devices.set('GS8P', '갤럭시S8+');
+devices.set('GS9', '갤럭시S9');
+devices.set('GS9P', '갤럭시S9+');
+devices.set('GN5', '갤럭시노트5');
+devices.set('GN6', '갤럭시노트6');
+devices.set('GN7', '갤럭시노트7');
+devices.set('GN8', '갤럭시노트8');
+
+let gridData = [];
+
 
 $(document).ready(function () {
-  'use strict';
 
   console.log('__dirname='+__dirname);
 
-  let htmlText = '';
+  let htmlDoc;
+
+  $('#template').load('./resources/order-template.html #tabs-oderlist', function () {
+  });
 
   fs.readFile('resources/order-template.html', function (err, html) {
     if (err) {
       throw err;
     }
-    htmlText = html;
-    console.log('html ==> \m' + htmlText);
+    htmlDoc = html;
+    console.log('htmlDoc ==> ' + htmlDoc);
   });
 
 
@@ -27,14 +56,30 @@ $(document).ready(function () {
       return;
     }
 
-    for (var i = 0; i < gridData.length; i++) {
-        if (!gridData[i].EPS_DESIGN_CODE) {
-            break;
-        }
-        console.log(gridData[i]);
+    // gridData.some(function(data) {
+    //   console.log(data);
+    //   return (!data.EPS_DESIGN_CODE);
+    // });
+    let rawData = [];
+    for (let i = 0; i < gridData.length; i++) {
+      let templateCode = gridData[i].TEMPLATE_CODE.split('_');
+      let epsDesignCode = gridData[i].EPS_DESIGN_CODE.split('_');
+      let data = {
+        template: templateCode[0],
+        device: templateCode[1],
+        designCode: epsDesignCode[0],
+        designSubCode: gridData[i].DESIGN_SUB_CODE,
+        quantity: gridData[i].QUANTITY
+      };
+      rawData[i] = data;
     }
 
-	  fs.writeFile('C:/주문서22.html', htmlText, 'utf8', function (err) {
+    appendOrderRow(rawData);
+
+    $('#template').show();
+
+
+	  fs.writeFile('C:/주문서22.html', htmlDoc, 'utf8', function (err) {
 		  if (err) {
 			  throw err;
 		  }
@@ -43,8 +88,33 @@ $(document).ready(function () {
   });
 });
 
+var appendOrderRow = function (rawData) {
+  console.log("rawData.length=" + rawData.length);
+  let $row = $('#order-list');
 
-const htModule = (function () {
+  let v = rawData[0];
+  let tr = '<tr><td rowspan="' + rawData.length + '">' + templates.get(v.template) + '</td>';
+  tr += '<td></td>';
+  tr += '<td><a href="#black-ip6">'+ devices.get(v.device) +'</a></td>';
+  tr += '<td class="text-right">'+ v.quantity +'</td>';
+  tr += '<td></td>';
+  tr += '</tr>';
+  $row.append(tr);
+
+  for (let i = 1; i < rawData.length; i++) {
+    v = rawData[i];
+    tr = '<tr>';
+    tr += '<td></td>';
+    tr += '<td><a href="#black-ip6">'+ devices.get(v.device) +'</a></td>';
+    tr += '<td class="text-right">'+ v.quantity +'</td>';
+    tr += '<td></td>';
+    tr += '</tr>';
+    $row.append(tr);
+  }
+};
+
+
+var htModule = (function () {
   const settings = {
     container: document.getElementById('grid'),
     $xlf: $('#xlf')
@@ -76,11 +146,11 @@ const htModule = (function () {
       {data: 'QUANTITY'},
       {data: 'REQUEST'}
     ],
-    minSpareRows: 10000,
+    // minSpareRows: 10000,
     maxRows: 10000
   });
 
-  const bind = function () {
+  var bind = function () {
 
     settings.$xlf.change(function (event) {
       handleFile(event, function (json) {
@@ -91,13 +161,10 @@ const htModule = (function () {
         refresh();
       });
     });
-
   };
 
-  const init = function () {
-
+  var init = function () {
     bind();
-
   };
 
   /**

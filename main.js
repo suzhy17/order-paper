@@ -6,7 +6,6 @@ const {app, BrowserWindow} = electron;
 
 let mainWindow;
 
-
 app.on('ready', function () {
   mainWindow = new BrowserWindow({width: 900, height: 1000});
   mainWindow.loadURL(url.format({
@@ -18,4 +17,4 @@ app.on('ready', function () {
 
 app.on('window-all-closed', () => {
   app.quit();
-})
+});

@@ -38,7 +38,7 @@ $(document).ready(function () {
 
   let htmlDoc;
 
-  $('#template').load('./resources/order-template.html #tabs-oderlist', function () {
+  $('#template').load('./resources/order-template.html', function () {
   });
 
   fs.readFile('resources/order-template.html', function (err, html) {
@@ -46,7 +46,7 @@ $(document).ready(function () {
       throw err;
     }
     htmlDoc = html;
-    console.log('htmlDoc ==> ' + htmlDoc);
+    //console.log('htmlDoc ==> ' + htmlDoc);
   });
 
 
@@ -65,21 +65,114 @@ $(document).ready(function () {
       let templateCode = gridData[i].TEMPLATE_CODE.split('_');
       let epsDesignCode = gridData[i].EPS_DESIGN_CODE.split('_');
       let data = {
+        shop: gridData[i].REQUEST,
         template: templateCode[0],
         device: templateCode[1],
         designCode: epsDesignCode[0],
         designSubCode: gridData[i].DESIGN_SUB_CODE,
-        quantity: gridData[i].QUANTITY
+        quantity: parseInt(gridData[i].QUANTITY)
       };
       rawData[i] = data;
     }
 
-    appendOrderRow(rawData);
+    // 정렬
+    rawData = rawData.sort(function (a, b) {
+      if (a.shop === b.shop) {
+        if (a.template === b.template) {
+          if (a.device === b.device) {
+            if (a.designCode === b.designCode) {
+              return 0;
+            } else if (a.designCode < b.designCode) {
+              return -1;
+            } else {
+              return 1;
+            }
+          } else if (a.device < b.device) {
+            return -1;
+          } else {
+            return 1;
+          }
+        } else if (a.template < b.template) {
+          return -1;
+        } else {
+          return 1;
+        }
+      } else if (a.shop < b.shop) {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
+
+    //console.log('rawData='+JSON.stringify( rawData ));
+
+    // 발주서용 데이터 구조화
+    let orderPaperDataMap = createOrderPaperData(rawData);
+//    console.log('orderPaperDataMap='+JSON.stringify( orderPaperDataMap ));
+
+    // let jsonResult = [{}];
+    //
+    // for (let i = 0; i < rawData.length; i++) {
+    //   if (rawData[i].shop === data.shop) {
+    //
+    //   } else {
+    //     let data1 = {
+    //       template: 'BLACK',
+    //       orders: [{
+    //         device: data.device,
+    //         designs: [{
+    //           code: data.designCode,
+    //           sub: [
+    //             {subCode: data.designSubCode, qty: data.quantity}
+    //           ]
+    //         }]
+    //       }]
+    //     };
+    //     rawData.append(data1);
+    //   }
+    // }
+    //
+    // let model1 = {
+    //   template: 'BLACK',
+    //   orders: [{
+    //     device: 'IP6',
+    //     designs: [{
+    //       code: 'A0001',
+    //       sub: [
+    //         {subCode: 'white', qty: 1},
+    //         {subCode: 'red', qty: 5}
+    //       ]
+    //     }]
+    //   }]
+    // };
+    //
+    // let model2 = {
+    //   template: 'BLACK',
+    //   orders: [{
+    //     device: 'IP7',
+    //     designs: [{
+    //       code: 'A0001',
+    //       sub: [
+    //         {subCode: 'white', qty: 1},
+    //         {subCode: 'red', qty: 5}
+    //       ]
+    //     }]
+    //   }]
+    // };
+    //
+    // var mergedJson = {};
+    // $.extend( true, mergedJson, model1, model2 );
+    // console.log('mergedJson='+JSON.stringify( mergedJson ));
+
+    let modelMap = new Map();
+    // modelMap.set(gridData[i].REQUEST, model);
+
+    setOrderPaperOrderRow(orderPaperDataMap);
 
     $('#template').show();
 
 
-	  fs.writeFile('C:/주문서22.html', htmlDoc, 'utf8', function (err) {
+	  fs.writeFile('C:/주문서22.html', $('#template').html(), 'utf8', function (err) {
 		  if (err) {
 			  throw err;
 		  }
@@ -88,29 +181,75 @@ $(document).ready(function () {
   });
 });
 
-var appendOrderRow = function (rawData) {
-  console.log("rawData.length=" + rawData.length);
+var createOrderPaperData = function (rawData) {
+  let templateMap = new Map();
+  for (let i = 0; i < rawData.length; i++) {
+    if (templateMap.has(rawData[i].template)) {
+      continue;
+    }
+    templateMap.set(rawData[i].template, []);
+  }
+
+
+
+  templateMap.forEach((value, key, map) => {
+    console.log('key='+key);
+    let orderPaperData = [];
+    for (let i = 0; i < rawData.length; i++) {
+      if (rawData[i].template !== key) {
+        continue;
+      }
+      console.log('rawData['+i+']='+JSON.stringify(rawData[i]));
+
+      let isExist = false;
+      for (let k = 0; k < orderPaperData.length; k++) {
+        if (rawData[i].device === orderPaperData[k].device) {
+          orderPaperData[k].quantity += rawData[i].quantity;
+          isExist = true;
+          break;
+        }
+      }
+      if (!isExist) {
+        orderPaperData.push({
+          template: rawData[i].template,
+          device: rawData[i].device,
+          quantity: rawData[i].quantity
+        });
+      }
+    }
+    console.log('orderPaperData.length='+orderPaperData.length);
+    templateMap.set(key, orderPaperData);
+  });
+
+  return templateMap;
+};
+
+var setOrderPaperOrderRow = function (orderPaperDataMap) {
   let $row = $('#order-list');
 
-  let v = rawData[0];
-  let tr = '<tr><td rowspan="' + rawData.length + '">' + templates.get(v.template) + '</td>';
-  tr += '<td></td>';
-  tr += '<td><a href="#black-ip6">'+ devices.get(v.device) +'</a></td>';
-  tr += '<td class="text-right">'+ v.quantity +'</td>';
-  tr += '<td></td>';
-  tr += '</tr>';
-  $row.append(tr);
+  orderPaperDataMap.forEach((value, key, map) => {
+    console.log('orderPaperDataMap[key]='+JSON.stringify( orderPaperDataMap.get(key)));
 
-  for (let i = 1; i < rawData.length; i++) {
-    v = rawData[i];
-    tr = '<tr>';
+    let v = orderPaperDataMap.get(key)[0];
+    let tr = '';
+    tr += '<tr><td rowspan="' + value.length + '">' + templates.get(v.template) + '</td>';
     tr += '<td></td>';
     tr += '<td><a href="#black-ip6">'+ devices.get(v.device) +'</a></td>';
     tr += '<td class="text-right">'+ v.quantity +'</td>';
     tr += '<td></td>';
     tr += '</tr>';
+
+    for (let i = 1; i < orderPaperDataMap.get(key).length; i++) {
+      v = orderPaperDataMap.get(key)[i];
+      tr += '<tr>';
+      tr += '<td></td>';
+      tr += '<td><a href="#black-ip6">'+ devices.get(v.device) +'</a></td>';
+      tr += '<td class="text-right">'+ v.quantity +'</td>';
+      tr += '<td></td>';
+      tr += '</tr>';
+    }
     $row.append(tr);
-  }
+  });
 };
 
 

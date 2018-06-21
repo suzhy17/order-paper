@@ -34,19 +34,16 @@ let gridData = [];
 
 $(document).ready(function () {
 
-  console.log('__dirname='+__dirname);
+  let htmlDoc,
+      $templateArea = $('#templateArea');
 
-  let htmlDoc;
-
-  $('#template').load('./resources/order-template.html', function () {
-  });
+  $templateArea.load('./resources/order-template.html');
 
   fs.readFile('resources/order-template.html', function (err, html) {
     if (err) {
       throw err;
     }
     htmlDoc = html;
-    //console.log('htmlDoc ==> ' + htmlDoc);
   });
 
 
@@ -56,10 +53,6 @@ $(document).ready(function () {
       return;
     }
 
-    // gridData.some(function(data) {
-    //   console.log(data);
-    //   return (!data.EPS_DESIGN_CODE);
-    // });
     let rawData = [];
     for (let i = 0; i < gridData.length; i++) {
       let templateCode = gridData[i].TEMPLATE_CODE.split('_');
@@ -106,32 +99,8 @@ $(document).ready(function () {
 
     //console.log('rawData='+JSON.stringify( rawData ));
 
-    // 발주서용 데이터 구조화
-    let orderPaperDataMap = createOrderPaperData(rawData);
-//    console.log('orderPaperDataMap='+JSON.stringify( orderPaperDataMap ));
 
-    // let jsonResult = [{}];
-    //
-    // for (let i = 0; i < rawData.length; i++) {
-    //   if (rawData[i].shop === data.shop) {
-    //
-    //   } else {
-    //     let data1 = {
-    //       template: 'BLACK',
-    //       orders: [{
-    //         device: data.device,
-    //         designs: [{
-    //           code: data.designCode,
-    //           sub: [
-    //             {subCode: data.designSubCode, qty: data.quantity}
-    //           ]
-    //         }]
-    //       }]
-    //     };
-    //     rawData.append(data1);
-    //   }
-    // }
-    //
+
     // let model1 = {
     //   template: 'BLACK',
     //   orders: [{
@@ -145,38 +114,29 @@ $(document).ready(function () {
     //     }]
     //   }]
     // };
-    //
-    // let model2 = {
-    //   template: 'BLACK',
-    //   orders: [{
-    //     device: 'IP7',
-    //     designs: [{
-    //       code: 'A0001',
-    //       sub: [
-    //         {subCode: 'white', qty: 1},
-    //         {subCode: 'red', qty: 5}
-    //       ]
-    //     }]
-    //   }]
-    // };
-    //
-    // var mergedJson = {};
-    // $.extend( true, mergedJson, model1, model2 );
-    // console.log('mergedJson='+JSON.stringify( mergedJson ));
 
     let modelMap = new Map();
     // modelMap.set(gridData[i].REQUEST, model);
 
+    // 발주서용 데이터 구조화
+    let orderPaperDataMap = createOrderPaperData(rawData);
+
     setOrderPaperOrderRow(orderPaperDataMap);
 
-    $('#template').show();
+    // 상세 주문내역용 데이터 구조화
+    let orderDetailDataMap = createOrderDetailData(rawData);
+    setOrderDetailTemplateTab(orderDetailDataMap);
 
 
-	  fs.writeFile('C:/주문서22.html', $('#template').html(), 'utf8', function (err) {
+
+    $templateArea.show();
+
+
+	  fs.writeFile('C:/주문서22.html', $templateArea.html(), 'utf8', function (err) {
 		  if (err) {
 			  throw err;
 		  }
-		  console.log('write end')
+		  console.log('write ok')
 	  });
   });
 });
@@ -196,7 +156,7 @@ var createOrderPaperData = function (rawData) {
   }
 
   templateMap.forEach((value, key, map) => {
-    console.log('key='+key);
+    console.log(`key=${key}`);
 
     // 현재 key에 해당하는 템플릿만 추출
     let filteredRawData = rawData.filter(function (data) {
@@ -226,41 +186,140 @@ var createOrderPaperData = function (rawData) {
         });
       }
     }
-    console.log('orderPaperData.length='+orderPaperData.length);
+    console.log(`orderPaperData.length=${orderPaperData.length}`);
     templateMap.set(key, orderPaperData);
   });
 
   return templateMap;
 };
 
+/**
+ * 발주서 내 주문 목록 셋팅
+ * @param orderPaperDataMap
+ */
 var setOrderPaperOrderRow = function (orderPaperDataMap) {
   let $row = $('#order-list');
 
   orderPaperDataMap.forEach((value, key, map) => {
-    console.log('orderPaperDataMap[key]='+JSON.stringify( orderPaperDataMap.get(key)));
+    console.log(`orderPaperDataMap.get(${key})=${JSON.stringify(orderPaperDataMap.get(key))}`);
 
     let v = orderPaperDataMap.get(key)[0];
-    let tr = '';
-    tr += '<tr><td rowspan="' + value.length + '">' + templates.get(v.template) + '</td>';
-    tr += '<td></td>';
-    tr += '<td><a href="#black-ip6">'+ devices.get(v.device) +'</a></td>';
-    tr += '<td class="text-right">'+ v.quantity +'</td>';
-    tr += '<td></td>';
-    tr += '</tr>';
+    let firstRow = `
+      <tr>
+        <td rowspan="${value.length}">${templates.get(v.template)}</td>
+        <td></td>
+        <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${devices.get(v.device)}</a></td>
+        <td class="text-right">${v.quantity}</td>
+        <td></td>
+      </tr>`;
+    $row.append(firstRow);
 
     for (let i = 1; i < orderPaperDataMap.get(key).length; i++) {
       v = orderPaperDataMap.get(key)[i];
-      tr += '<tr>';
-      tr += '<td></td>';
-      tr += '<td><a href="#black-ip6">'+ devices.get(v.device) +'</a></td>';
-      tr += '<td class="text-right">'+ v.quantity +'</td>';
-      tr += '<td></td>';
-      tr += '</tr>';
+      let otherRow = `
+      <tr>
+        <td></td>
+        <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${devices.get(v.device)}</a></td>
+        <td class="text-right">${v.quantity}</td>
+        <td></td>
+      </tr>`;
+      $row.append(otherRow);
     }
-    $row.append(tr);
+
   });
 };
 
+/**
+ * 상세 주문내역용 데이터 구조화하여 상세 목록 생성
+ * @param rawData
+ * @returns {Map}
+ */
+var createOrderDetailData = function (rawData) {
+  let templateMap = new Map();
+  for (let i = 0; i < rawData.length; i++) {
+    if (templateMap.has(rawData[i].template)) {
+      continue;
+    }
+    templateMap.set(rawData[i].template, []);
+  }
+
+  templateMap.forEach((value, key, map) => {
+    console.log(`key=${key}`);
+
+    // 현재 key에 해당하는 템플릿만 추출
+    templateMap.set(key, rawData.filter(function (data) {
+      return data.template === key;
+    }));
+  });
+
+  return templateMap;
+};
+
+var setOrderDetailTemplateTab = function (orderDetailDataMap) {
+  // 좌측 탭메뉴에 템플릿 추가
+  let $leftMenu = $('#left-menu');
+  orderDetailDataMap.forEach((value, key, map) => {
+    let menuItem = `<li><a href="#tabs-${key.toLowerCase()}">${templates.get(key)}</a></li>`;
+    console.log(`menuItem=${menuItem}`);
+    $leftMenu.append(menuItem);
+  });
+
+  let $tabs = $('#tabs-left');
+  orderDetailDataMap.forEach((value, key, map) => {
+    let tabHtml = `
+      <div id="tabs-${key.toLowerCase()}" class="template-tab">
+        <div>
+          <table id="black-ip5">
+            <colgroup>
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+            </colgroup>
+            <thead>
+              <tr>
+                <th colspan="10" class="text-red">iPhone 5 ${templates.get(key)}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_1.jpg" class="thumbnail"></td>
+                <td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_2.jpg" class="thumbnail"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr class="qty">
+                <td>1</td>
+                <td>1</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+          <button type="button" name="templatePrint">인쇄</button>
+        </div>
+      </div>`;
+    $tabs.append(tabHtml);
+  });
+};
 
 var htModule = (function () {
   const settings = {

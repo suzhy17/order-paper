@@ -181,6 +181,11 @@ $(document).ready(function () {
   });
 });
 
+/**
+ * 템플릿별로 그룹핑하여 주문 목록 생성
+ * @param rawData
+ * @returns {Map}
+ */
 var createOrderPaperData = function (rawData) {
   let templateMap = new Map();
   for (let i = 0; i < rawData.length; i++) {
@@ -190,30 +195,34 @@ var createOrderPaperData = function (rawData) {
     templateMap.set(rawData[i].template, []);
   }
 
-
-
   templateMap.forEach((value, key, map) => {
     console.log('key='+key);
-    let orderPaperData = [];
-    for (let i = 0; i < rawData.length; i++) {
-      if (rawData[i].template !== key) {
-        continue;
-      }
-      console.log('rawData['+i+']='+JSON.stringify(rawData[i]));
 
-      let isExist = false;
-      for (let k = 0; k < orderPaperData.length; k++) {
-        if (rawData[i].device === orderPaperData[k].device) {
-          orderPaperData[k].quantity += rawData[i].quantity;
-          isExist = true;
-          break;
+    // 현재 key에 해당하는 템플릿만 추출
+    let filteredRawData = rawData.filter(function (data) {
+      return data.template === key;
+    });
+
+    // 주문 목록 생성
+    let orderPaperData = [];
+    for (let key in filteredRawData) {
+      let data = filteredRawData[key];
+      //console.log('filteredRawData['+key+']='+JSON.stringify(data));
+
+      // 이미 존재하면 수량 증가
+      let isExist = orderPaperData.some(function (element) {
+        if (element.device === data.device) {
+          element.quantity += data.quantity;
+          return true;
         }
-      }
+      });
+
+      // 없는것이면 신규 생성
       if (!isExist) {
         orderPaperData.push({
-          template: rawData[i].template,
-          device: rawData[i].device,
-          quantity: rawData[i].quantity
+          template: data.template,
+          device: data.device,
+          quantity: data.quantity
         });
       }
     }

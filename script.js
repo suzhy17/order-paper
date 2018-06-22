@@ -32,6 +32,68 @@ devices.set('GN8', '갤럭시노트8');
 let gridData = [];
 
 
+/**
+ * 발주서 상세 주문내역용 데이터 구조화하여 상세 목록 생성
+ * @param rawData
+ * @returns {Map}
+ */
+let createOrderDetailData = (rawData) => {
+  let templateMap = new Map();
+  for (let i = 0; i < rawData.length; i++) {
+    if (templateMap.has(rawData[i].template)) {
+      continue;
+    }
+    templateMap.set(rawData[i].template, []);
+  }
+
+  templateMap.forEach((value, key, map) => {
+    // 현재 key에 해당하는 템플릿만 추출
+    templateMap.set(key, rawData.filter((data) => data.template === key));
+  });
+
+  return templateMap;
+};
+
+let groupBy = function(xs, key) {
+  return xs.reduce(function(rv, x) {
+    (rv[x[key]] = rv[x[key]] || []).push(x);
+    return rv;
+  }, {});
+};
+
+/**
+ * 썸네일 페이지용 데이터 구조화하여 상세 목록 생성
+ * @param rawData
+ * @returns {Map}
+ */
+let createThumbnailData = (rawData) => {
+  console.log('=== createThumbnailData ===');
+  let templateMap = new Map();
+  for (let i = 0; i < rawData.length; i++) {
+    if (templateMap.has(rawData[i].template)) {
+      continue;
+    }
+    templateMap.set(rawData[i].template, []);
+  }
+
+  templateMap.forEach((value, key, map) => {
+    // 현재 key에 해당하는 템플릿만 추출
+    let filteredList = rawData.filter((data) => data.template === key);
+    let groupByDevice = groupBy(filteredList, 'device');
+    // console.log(`groupByDevice=${JSON.stringify(groupByDevice)}`);
+
+    // groupByDevice['IP6'].forEach((vo) => console.log(`${vo.template}, ${vo.device}, ${vo.designCode}, ${vo.designSubCode}`));
+
+    // for (let sub_key in groupByDevice){
+    //   console.log(`==> ${sub_key}`);
+    // }
+
+    templateMap.set(key, groupByDevice);
+  });
+
+  return templateMap;
+};
+
 $(document).ready(function () {
 
   let htmlDoc,
@@ -47,7 +109,7 @@ $(document).ready(function () {
   });
 
 
-  $('#excelLoad').click(function () {
+  $('#excelLoad').click(() => {
     if (!gridData) {
       alert('주문 파일을 먼저 선택하세요.');
       return;
@@ -69,7 +131,7 @@ $(document).ready(function () {
     }
 
     // 정렬
-    rawData = rawData.sort(function (a, b) {
+    rawData = rawData.sort((a, b) => {
       if (a.shop === b.shop) {
         if (a.template === b.template) {
           if (a.device === b.device) {
@@ -124,7 +186,8 @@ $(document).ready(function () {
     setOrderPaperOrderRow(orderPaperDataMap);
 
     // 상세 주문내역용 데이터 구조화
-    let orderDetailDataMap = createOrderDetailData(rawData);
+    //let orderDetailDataMap = createOrderDetailData(rawData);
+    let orderDetailDataMap = createThumbnailData(rawData);
     setOrderDetailTemplateTab(orderDetailDataMap);
 
 
@@ -146,7 +209,7 @@ $(document).ready(function () {
  * @param rawData
  * @returns {Map}
  */
-var createOrderPaperData = function (rawData) {
+var createOrderPaperData = (rawData) => {
   let templateMap = new Map();
   for (let i = 0; i < rawData.length; i++) {
     if (templateMap.has(rawData[i].template)) {
@@ -159,7 +222,7 @@ var createOrderPaperData = function (rawData) {
     console.log(`key=${key}`);
 
     // 현재 key에 해당하는 템플릿만 추출
-    let filteredRawData = rawData.filter(function (data) {
+    let filteredRawData = rawData.filter((data) => {
       return data.template === key;
     });
 
@@ -170,7 +233,7 @@ var createOrderPaperData = function (rawData) {
       //console.log('filteredRawData['+key+']='+JSON.stringify(data));
 
       // 이미 존재하면 수량 증가
-      let isExist = orderPaperData.some(function (element) {
+      let isExist = orderPaperData.some((element) => {
         if (element.device === data.device) {
           element.quantity += data.quantity;
           return true;
@@ -197,7 +260,7 @@ var createOrderPaperData = function (rawData) {
  * 발주서 내 주문 목록 셋팅
  * @param orderPaperDataMap
  */
-var setOrderPaperOrderRow = function (orderPaperDataMap) {
+var setOrderPaperOrderRow = (orderPaperDataMap) => {
   let $row = $('#order-list');
 
   orderPaperDataMap.forEach((value, key, map) => {
@@ -229,33 +292,12 @@ var setOrderPaperOrderRow = function (orderPaperDataMap) {
   });
 };
 
+
 /**
- * 상세 주문내역용 데이터 구조화하여 상세 목록 생성
- * @param rawData
- * @returns {Map}
+ *
+ * @param orderDetailDataMap
  */
-var createOrderDetailData = function (rawData) {
-  let templateMap = new Map();
-  for (let i = 0; i < rawData.length; i++) {
-    if (templateMap.has(rawData[i].template)) {
-      continue;
-    }
-    templateMap.set(rawData[i].template, []);
-  }
-
-  templateMap.forEach((value, key, map) => {
-    console.log(`key=${key}`);
-
-    // 현재 key에 해당하는 템플릿만 추출
-    templateMap.set(key, rawData.filter(function (data) {
-      return data.template === key;
-    }));
-  });
-
-  return templateMap;
-};
-
-var setOrderDetailTemplateTab = function (orderDetailDataMap) {
+let setOrderDetailTemplateTab = (orderDetailDataMap) => {
   // 좌측 탭메뉴에 템플릿 추가
   let $leftMenu = $('#left-menu');
   orderDetailDataMap.forEach((value, key, map) => {
@@ -264,12 +306,15 @@ var setOrderDetailTemplateTab = function (orderDetailDataMap) {
     $leftMenu.append(menuItem);
   });
 
+  // 탭에 템플릿 컨텐츠 추가
   let $tabs = $('#tabs-left');
-  orderDetailDataMap.forEach((value, key, map) => {
+  orderDetailDataMap.forEach((thumbnailInfo, templateKey, map) => {
     let tabHtml = `
-      <div id="tabs-${key.toLowerCase()}" class="template-tab">
-        <div>
-          <table id="black-ip5">
+      <div id="tabs-${templateKey.toLowerCase()}" class="template-tab">
+        <div>`;
+    for (let deviceKey in thumbnailInfo) {
+      tabHtml += `
+          <table id="${templateKey.toLowerCase()}-${deviceKey.toLowerCase()}">
             <colgroup>
               <col style="width: 10%">
               <col style="width: 10%">
@@ -284,44 +329,40 @@ var setOrderDetailTemplateTab = function (orderDetailDataMap) {
             </colgroup>
             <thead>
               <tr>
-                <th colspan="10" class="text-red">iPhone 5 ${templates.get(key)}</th>
+                <th colspan="10" class="text-red">${devices.get(deviceKey)} ${templates.get(templateKey)}</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_1.jpg" class="thumbnail"></td>
-                <td><img src="http://webagency.pe.kr/thumbnail/A0001_SOFTT_2.jpg" class="thumbnail"></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr class="qty">
-                <td>1</td>
-                <td>1</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
+            <tbody>`;
+      let thumbnails = thumbnailInfo[deviceKey],
+          thmIdx = 0;
+      for (let thumbnailKey in thumbnails) {
+        if (thmIdx === 0 || thmIdx === 10) {
+          tabHtml += '<tr>';
+        }
+        tabHtml += `<td>
+                      <div><img src="http://webagency.pe.kr/thumbnail/${thumbnails[thumbnailKey].designCode}_${thumbnails[thumbnailKey].template}_${thumbnails[thumbnailKey].designSubCode}.jpg" class="thumbnail"></div>
+                      <div class="qty">${thumbnails[thumbnailKey].quantity}</div>
+                    </td>`;
+        if (thmIdx === 9 || thmIdx === 19) {
+          tabHtml += '</tr>';
+        }
+        thmIdx++;
+      }
+      tabHtml += `
             </tbody>
           </table>
           <button type="button" name="templatePrint">인쇄</button>
+          <br>`;
+    }
+    tabHtml += `
         </div>
       </div>`;
+
     $tabs.append(tabHtml);
   });
 };
 
-var htModule = (function () {
+let htModule = (function () {
   const settings = {
     container: document.getElementById('grid'),
     $xlf: $('#xlf')

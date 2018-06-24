@@ -6,25 +6,25 @@ XLSX = require('xlsx');
 const thumbnailRoot = 'C:/thumbnail';
 
 const templates = new Map([
-  ['SOFTT', '소프트케이스'],
-  ['BLACK', '블랙케이스'],
-  ['TWINK', '트윙클케이스'],
-  ['LEATH', '레더케이스'],
-  ['SPRIT', '스피릿케이스'],
-  ['SPRITSP', '스피릿케이스(커버)'],
-  ['BTTRY_5CA', '보조배터리 5,000mAh'],
-  ['BTTRY_10CA', '보조배터리 10,000mAh'],
-  ['COILL', '코일룩'],
-  ['SMART', '스마트클리너'],
-  ['a', '강화유리'],
-  ['b', '풀커버'],
-  ['c', '전면부착풀커버'],
-  ['d', '아이폰젠더'],
-  ['e', '애플케이블 핑크'],
-  ['f', '애플케이블 실버'],
-  ['g', '접이식LED'],
-  ['h', '곰토끼LED'],
-  ['i', '원형LED']
+  ['SOFTT'     , {type: 'case', label: '소프트케이스'        , price: 5500}],
+  ['BLACK'     , {type: 'case', label: '블랙케이스'          , price: 7700}],
+  ['TWINK'     , {type: 'case', label: '트윙클케이스'        , price: 8800}],
+  ['LEATH'     , {type: 'case', label: '레더케이스'          , price: 8800}],
+  ['SPRIT'     , {type: 'case', label: '스피릿케이스'        , price: 9350}],
+  ['SPRITSP'   , {type: 'case', label: '스피릿케이스(커버)'  , price: 4400}],
+  ['BTTRY_5CA' , {type: 'acce', label: '보조배터리 5,000mAh' , price: 12100}],
+  ['BTTRY_10CA', {type: 'acce', label: '보조배터리 10,000mAh', price: 18700}],
+  ['COILL'     , {type: 'acce', label: '코일룩'              , price: 4400}],
+  ['SMART'     , {type: 'acce', label: '스마트클리너'        , price: 1650}],
+  ['a'         , {type: 'acce', label: '강화유리'            , price: 2200}],
+  ['b'         , {type: 'acce', label: '풀커버'              , price: 6600}],
+  ['c'         , {type: 'acce', label: '전면부착풀커버'      , price: 13200}],
+  ['d'         , {type: 'acce', label: '아이폰젠더'          , price: 550}],
+  ['e'         , {type: 'acce', label: '애플케이블 핑크'     , price: 3300}],
+  ['f'         , {type: 'acce', label: '애플케이블 실버'     , price: 3300}],
+  ['g'         , {type: 'acce', label: '접이식LED'           , price: 6600}],
+  ['h'         , {type: 'acce', label: '곰토끼LED'           , price: 4620}],
+  ['i'         , {type: 'acce', label: '원형LED'             , price: 5500}],
 ]);
 
 const devices = new Map([
@@ -48,7 +48,7 @@ const devices = new Map([
   ['GN8', '갤럭시노트8'],
   ['OG5', '옵티머스G5'],
   ['OG6', '옵티머스G6'],
-  ['OG7', '옵티머스G7']
+  ['OG7', '옵티머스G7'],
 ]);
 
 let gridData = [];
@@ -129,6 +129,7 @@ $(document).ready(function () {
 
     $templateArea.load('./resources/order-template.html', parseData);
   });
+
   var parseData = function () {
 
     let rawData = [];
@@ -182,6 +183,26 @@ $(document).ready(function () {
 
 
     $('#shop').text(rawData[0].shop);
+
+    let total = {
+      caseQty: 0,
+      acceQty: 0,
+      totalPrice: 0
+    };
+    for (let i = 0; i < rawData.length; i++) {
+      let platform = templates.get(rawData[i].template);
+      if (platform.type === 'case') {
+        total.caseQty += parseInt(rawData[i].quantity);
+      } else {
+        total.acceQty += parseInt(rawData[i].quantity);
+      }
+      total.totalPrice += platform.price * rawData[i].quantity;
+    }
+
+    $('#totalCaseQuantity').text(total.caseQty.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+    $('#totalQuantity').text((total.caseQty + total.acceQty).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+    $('#totalPrice').text(total.totalPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+
 
 
     // 발주서용 데이터 구조화
@@ -274,7 +295,7 @@ var setOrderPaperOrderRow = (orderPaperDataMap) => {
     let v = orderPaperDataMap.get(key)[0];
     let firstRow = `
       <tr>
-        <td rowspan="${value.length}">${templates.get(v.template)}</td>
+        <td rowspan="${value.length}">${templates.get(v.template).label}</td>
         <td></td>
         <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${devices.get(v.device)}</a></td>
         <td class="text-right">${v.quantity}</td>
@@ -306,7 +327,7 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
   // 좌측 탭메뉴에 템플릿 추가
   let $leftMenu = $('#left-menu');
   orderDetailDataMap.forEach((value, key, map) => {
-    let menuItem = `<li><a href="#tabs-${key.toLowerCase()}">${templates.get(key)}</a></li>`;
+    let menuItem = `<li><a href="#tabs-${key.toLowerCase()}">${templates.get(key).label}</a></li>`;
     console.log(`menuItem=${menuItem}`);
     $leftMenu.append(menuItem);
   });
@@ -334,7 +355,7 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
             </colgroup>
             <thead>
               <tr>
-                <th colspan="10" class="text-red">${devices.get(deviceKey)} ${templates.get(templateKey)}</th>
+                <th colspan="10" class="text-red">${devices.get(deviceKey)} ${templates.get(templateKey).label}</th>
               </tr>
             </thead>
             <tbody>`;

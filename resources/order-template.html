@@ -150,7 +150,7 @@
 					<th>확인</th>
 				</tr>
 				<tr>
-					<td>홍대2호점</td>
+					<td><p id="shop">홍대2호점</p></td>
 					<td>5월2일</td>
 					<td></td>
 					<td></td>
@@ -252,7 +252,8 @@
 		});
 
 		$('button[name="templatePrint"]').click(function () {
-			printElement('<table>' + $(this).siblings('table').html() + '</table>');
+		    var tabId = $(this).data('tabId');
+			printElement('<table>' + $(tabId).html() + '</table>');
 		});
 
 		function printElement(txt) {

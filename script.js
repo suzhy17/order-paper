@@ -3,31 +3,53 @@
 const fs = require('fs');
 XLSX = require('xlsx');
 
+const thumbnailRoot = 'C:/thumbnail';
+
 const templates = new Map([
-  ['BLACK' , '블랙케이스'],
-  ['SPRIT' , '스피릿케이스'],
-  ['SOFTT' , '소프트케이스'],
-  ['TWINK' , '트윙클케이스']
+  ['SOFTT', '소프트케이스'],
+  ['BLACK', '블랙케이스'],
+  ['TWINK', '트윙클케이스'],
+  ['LEATH', '레더케이스'],
+  ['SPRIT', '스피릿케이스'],
+  ['SPRITSP', '스피릿케이스(커버)'],
+  ['BTTRY_5CA', '보조배터리 5,000mAh'],
+  ['BTTRY_10CA', '보조배터리 10,000mAh'],
+  ['COILL', '코일룩'],
+  ['SMART', '스마트클리너'],
+  ['a', '강화유리'],
+  ['b', '풀커버'],
+  ['c', '전면부착풀커버'],
+  ['d', '아이폰젠더'],
+  ['e', '애플케이블 핑크'],
+  ['f', '애플케이블 실버'],
+  ['g', '접이식LED'],
+  ['h', '곰토끼LED'],
+  ['i', '원형LED']
 ]);
 
-const devices = new Map();
-devices.set('IP5', '아이폰5');
-devices.set('IP6', '아이폰6');
-devices.set('IP7', '아이폰7');
-devices.set('IP7P', '아이폰7+');
-devices.set('IP8', '아이폰8');
-devices.set('IP8P', '아이폰8+');
-devices.set('IPFX', '아이폰X');
-devices.set('GS7', '갤럭시S7');
-devices.set('GS7P', '갤럭시S7+');
-devices.set('GS8', '갤럭시S8');
-devices.set('GS8P', '갤럭시S8+');
-devices.set('GS9', '갤럭시S9');
-devices.set('GS9P', '갤럭시S9+');
-devices.set('GN5', '갤럭시노트5');
-devices.set('GN6', '갤럭시노트6');
-devices.set('GN7', '갤럭시노트7');
-devices.set('GN8', '갤럭시노트8');
+const devices = new Map([
+  ['IP5', '아이폰5'],
+  ['IP6', '아이폰6'],
+  ['IP7', '아이폰7'],
+  ['IP8', '아이폰8'],
+  ['IP7P', '아이폰7플러스'],
+  ['IP8P', '아이폰8플러스'],
+  ['IPX', '아이폰X'],
+  ['GS6', '갤럭시S6'],
+  ['GS6E', '갤럭시S6엣지'],
+  ['GS7', '갤럭시S7'],
+  ['GS7E', '갤럭시S7엣지'],
+  ['GS8', '갤럭시S8'],
+  ['GS8P', '갤럭시S8플러스'],
+  ['GS9', '갤럭시S9'],
+  ['GS9P', '갤럭시S9플러스'],
+  ['GN5', '갤럭시노트5'],
+  ['GN7', '갤럭시노트7/FE'],
+  ['GN8', '갤럭시노트8'],
+  ['OG5', '옵티머스G5'],
+  ['OG6', '옵티머스G6'],
+  ['OG7', '옵티머스G7']
+]);
 
 let gridData = [];
 
@@ -96,30 +118,24 @@ let createThumbnailData = (rawData) => {
 
 $(document).ready(function () {
 
-  let htmlDoc,
-      $templateArea = $('#templateArea');
-
-  $templateArea.load('./resources/order-template.html');
-
-  fs.readFile('resources/order-template.html', function (err, html) {
-    if (err) {
-      throw err;
-    }
-    htmlDoc = html;
-  });
+  let $templateArea = $('#templateArea');
 
 
-  $('#excelLoad').click(() => {
+  $('#create').click(() => {
     if (!gridData) {
       alert('주문 파일을 먼저 선택하세요.');
       return;
     }
 
+    $templateArea.load('./resources/order-template.html', parseData);
+  });
+  var parseData = function () {
+
     let rawData = [];
     for (let i = 0; i < gridData.length; i++) {
       let templateCode = gridData[i].TEMPLATE_CODE.split('_');
       let epsDesignCode = gridData[i].EPS_DESIGN_CODE.split('_');
-      let data = {
+      rawData[i] = {
         shop: gridData[i].REQUEST,
         template: templateCode[0],
         device: templateCode[1],
@@ -127,7 +143,6 @@ $(document).ready(function () {
         designSubCode: gridData[i].DESIGN_SUB_CODE,
         quantity: parseInt(gridData[i].QUANTITY)
       };
-      rawData[i] = data;
     }
 
     // 정렬
@@ -136,7 +151,13 @@ $(document).ready(function () {
         if (a.template === b.template) {
           if (a.device === b.device) {
             if (a.designCode === b.designCode) {
-              return 0;
+              if (a.designSubCode === b.designSubCode) {
+                return 0;
+              } else if (a.designSubCode < b.designSubCode) {
+                return -1;
+              } else {
+                return 1;
+              }
             } else if (a.designCode < b.designCode) {
               return -1;
             } else {
@@ -159,26 +180,9 @@ $(document).ready(function () {
       }
     });
 
-    //console.log('rawData='+JSON.stringify( rawData ));
 
+    $('#shop').text(rawData[0].shop);
 
-
-    // let model1 = {
-    //   template: 'BLACK',
-    //   orders: [{
-    //     device: 'IP6',
-    //     designs: [{
-    //       code: 'A0001',
-    //       sub: [
-    //         {subCode: 'white', qty: 1},
-    //         {subCode: 'red', qty: 5}
-    //       ]
-    //     }]
-    //   }]
-    // };
-
-    let modelMap = new Map();
-    // modelMap.set(gridData[i].REQUEST, model);
 
     // 발주서용 데이터 구조화
     let orderPaperDataMap = createOrderPaperData(rawData);
@@ -191,17 +195,18 @@ $(document).ready(function () {
     setOrderDetailTemplateTab(orderDetailDataMap);
 
 
+    // 미리보기
+    // $templateArea.show();
 
-    $templateArea.show();
 
-
-	  fs.writeFile('C:/주문서22.html', $templateArea.html(), 'utf8', function (err) {
+	  fs.writeFile('C:/발주서.html', $templateArea.html(), 'utf8', function (err) {
 		  if (err) {
 			  throw err;
 		  }
-		  console.log('write ok')
+		  console.log('write ok');
+      alert('발주서 생성이 완료되었습니다.\n(C:/발주서.html)');
 	  });
-  });
+  };
 });
 
 /**
@@ -336,23 +341,35 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
       let thumbnails = thumbnailInfo[deviceKey],
           thmIdx = 0;
       for (let thumbnailKey in thumbnails) {
-        if (thmIdx === 0 || thmIdx === 10) {
+        if (thmIdx % 10 === 0) {
           tabHtml += '<tr>';
         }
         tabHtml += `<td>
-                      <div><img src="http://webagency.pe.kr/thumbnail/${thumbnails[thumbnailKey].designCode}_${thumbnails[thumbnailKey].template}_${thumbnails[thumbnailKey].designSubCode}.jpg" class="thumbnail"></div>
+                      <div><img src="${thumbnailRoot}/${thumbnails[thumbnailKey].template}/${thumbnails[thumbnailKey].designCode}_${thumbnails[thumbnailKey].template}_${thumbnails[thumbnailKey].designSubCode}.jpg"
+                                alt="${thumbnails[thumbnailKey].designCode}_${thumbnails[thumbnailKey].template}_${thumbnails[thumbnailKey].designSubCode}"
+                                class="thumbnail"></div>
                       <div class="qty">${thumbnails[thumbnailKey].quantity}</div>
                     </td>`;
-        if (thmIdx === 9 || thmIdx === 19) {
+        thmIdx++;
+        if (thmIdx % 10 === 0) {
           tabHtml += '</tr>';
         }
-        thmIdx++;
+      }
+      let blanks = 10 - (thumbnails.length % 10);
+      for (let k = 0; k < blanks; k++) {
+        tabHtml += `<td>
+                      <div><img src="${thumbnailRoot}/blank.jpg" class="thumbnail"></div>
+                      <div class="qty"></div>
+                    </td>`;
+      }
+      if (blanks > 0) {
+        tabHtml += '</tr>';
       }
       tabHtml += `
             </tbody>
           </table>
-          <button type="button" name="templatePrint">인쇄</button>
-          <br>`;
+          <button type="button" name="templatePrint" data-tab-id="#${templateKey.toLowerCase()}-${deviceKey.toLowerCase()}">인쇄</button>
+          <br><br>`;
     }
     tabHtml += `
         </div>

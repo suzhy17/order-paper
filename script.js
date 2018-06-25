@@ -53,29 +53,6 @@ const devices = new Map([
 
 let gridData = [];
 
-
-/**
- * 발주서 상세 주문내역용 데이터 구조화하여 상세 목록 생성
- * @param rawData
- * @returns {Map}
- */
-let createOrderDetailData = (rawData) => {
-  let templateMap = new Map();
-  for (let i = 0; i < rawData.length; i++) {
-    if (templateMap.has(rawData[i].template)) {
-      continue;
-    }
-    templateMap.set(rawData[i].template, []);
-  }
-
-  templateMap.forEach((value, key, map) => {
-    // 현재 key에 해당하는 템플릿만 추출
-    templateMap.set(key, rawData.filter((data) => data.template === key));
-  });
-
-  return templateMap;
-};
-
 let groupBy = function(xs, key) {
   return xs.reduce(function(rv, x) {
     (rv[x[key]] = rv[x[key]] || []).push(x);
@@ -102,13 +79,14 @@ let createThumbnailData = (rawData) => {
     // 현재 key에 해당하는 템플릿만 추출
     let filteredList = rawData.filter((data) => data.template === key);
     let groupByDevice = groupBy(filteredList, 'device');
-    // console.log(`groupByDevice=${JSON.stringify(groupByDevice)}`);
+    console.log(`groupByDevice=${JSON.stringify(groupByDevice)}`);
 
     // groupByDevice['IP6'].forEach((vo) => console.log(`${vo.template}, ${vo.device}, ${vo.designCode}, ${vo.designSubCode}`));
 
-    // for (let sub_key in groupByDevice){
-    //   console.log(`==> ${sub_key}`);
-    // }
+    for (let deviceKey in groupByDevice){
+      console.log(`==> ${deviceKey}`);
+      // groupByDevice[deviceKey].
+    }
 
     templateMap.set(key, groupByDevice);
   });
@@ -132,11 +110,12 @@ $(document).ready(function () {
 
   var parseData = function () {
 
-    let rawData = [];
+    // 입력 데이터 파싱
+    let inputDatas = [];
     for (let i = 0; i < gridData.length; i++) {
       let templateCode = gridData[i].TEMPLATE_CODE.split('_');
       let epsDesignCode = gridData[i].EPS_DESIGN_CODE.split('_');
-      rawData[i] = {
+      inputDatas[i] = {
         shop: gridData[i].REQUEST,
         template: templateCode[0],
         device: templateCode[1],
@@ -145,6 +124,26 @@ $(document).ready(function () {
         quantity: parseInt(gridData[i].QUANTITY)
       };
     }
+
+    // 중복 제거 (수량만 합치기)
+    let rawData = [];
+    inputDatas.reduce(function (res, value) {
+      let resKey = value.shop + value.template + value.device + value.designCode + value.designSubCode;
+      if (!res[resKey]) {
+        res[resKey] = {
+          shop: value.shop,
+          template: value.template,
+          device: value.device,
+          designCode: value.designCode,
+          designSubCode: value.designSubCode,
+          quantity: 0,
+        };
+        rawData.push(res[resKey]);
+      }
+      res[resKey].quantity += value.quantity;
+      return res;
+    }, {});
+
 
     // 정렬
     rawData = rawData.sort((a, b) => {
@@ -368,6 +367,7 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
         tabHtml += `<td>
                       <div><img src="${thumbnailRoot}/${thumbnails[thumbnailKey].template}/${thumbnails[thumbnailKey].designCode}_${thumbnails[thumbnailKey].template}_${thumbnails[thumbnailKey].designSubCode}.jpg"
                                 alt="${thumbnails[thumbnailKey].designCode}_${thumbnails[thumbnailKey].template}_${thumbnails[thumbnailKey].designSubCode}"
+                                onerror="this.src='http://webagency.pe.kr/thumbnail/imagenotfound.jpg'"
                                 class="thumbnail"></div>
                       <div class="qty">${thumbnails[thumbnailKey].quantity}</div>
                     </td>`;
@@ -379,7 +379,7 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
       let blanks = 10 - (thumbnails.length % 10);
       for (let k = 0; k < blanks; k++) {
         tabHtml += `<td>
-                      <div><img src="${thumbnailRoot}/blank.jpg" class="thumbnail"></div>
+                      <div><img src="${__dirname}/resources/blank.jpg" class="thumbnail"></div>
                       <div class="qty"></div>
                     </td>`;
       }

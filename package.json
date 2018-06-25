@@ -5,10 +5,11 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-packager . orderlist --platform=x64 --out=dist/ --asar --overwrite --all",
-    "build:win": "npm run build:win32 && npm run build:win64",
-    "build:win32": "build --win --ia32",
-    "build:win64": "build --win --x64"
+    "build": "electron-packager . orderpaper --platform=x64 --out=dist/ --asar --overwrite --all",
+    "package": "npm-run-all package:*",
+    "package:win32": "electron-packager . orderpaper --platform=win32 --arch=ia32 --asar --out=build_ia32 --overwrite",
+    "package:win64": "electron-packager . orderpaper --platform=win32 --arch=x64 --asar --out=build_x64 --overwrite",
+    "package:installer": "node ./script/installer.js"
   },
   "dependencies": {
     "asar": "^0.14.3",

@@ -379,7 +379,7 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
       let blanks = 10 - (thumbnails.length % 10);
       for (let k = 0; k < blanks; k++) {
         tabHtml += `<td>
-                      <div><img src="${__dirname}/resources/blank.jpg" class="thumbnail"></div>
+                      <div><img src="https://orig00.deviantart.net/ea3c/f/2010/104/9/e/blank_page_____by_neoslashott.png" class="thumbnail"></div>
                       <div class="qty"></div>
                     </td>`;
       }

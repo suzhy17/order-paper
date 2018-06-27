@@ -157,9 +157,13 @@ $(document).ready(function () {
             });
 
             // 발주서 생성
+            let shopCnt = 0;
             for (let shopsKey in shops) {
                 createOrderPaper(shops[shopsKey]);
+                shopCnt++;
             }
+
+            alert(`${shopCnt} 개의 발주서가 생성되었습니다.`);
         }
         catch (e) {
             console.log(`[${e.name}] ${e.message}`);

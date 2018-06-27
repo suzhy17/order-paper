@@ -4,6 +4,7 @@ const fs = require('fs');
 XLSX = require('xlsx');
 
 const thumbnailRoot = 'C:/thumbnail';
+const outputRoot = 'C:/발주서';
 
 const templates = new Map([
     ['SOFTT'     , {type: 'case', label: '소프트케이스'        , price: 5500}],
@@ -62,9 +63,9 @@ let groupBy = function(xs, key) {
 
 let gridData = [];
 var $templateArea = $('#templateArea');
+let orderDate = '';
 
 $(document).ready(function () {
-
 
     $('#create').click(() => {
         try {
@@ -74,13 +75,26 @@ $(document).ready(function () {
                 return;
             }
 
+            try {
+                let fileName = $('#xlf')[0].files[0].name;
+                let fileNames = fileName.split('_');
+                let lastName = fileNames[fileNames.length - 1].split('.');
+                if (lastName[0].length !== 8) {
+                    throw "order date";
+                }
+                orderDate = `${parseInt(lastName[0].substring(4, 6))}월 ${parseInt(lastName[0].substring(6, 8))}일`;
+                // alert('orderDate=' + orderDate);
+            } catch (e) {
+                alert(`주문 파일명을 확인해주세요.\n파일명 마지막에 '_년월일'이 있어야합니다.\n예> 매장발주서_20180627.xlsx`);
+            }
+
             // 입력 데이터 파싱, 검증
             let inputDatas = [];
             for (let i = 0; i < gridData.length; i++) {
                 let templateCode = gridData[i].TEMPLATE_CODE.split('_');
                 let epsDesignCode = gridData[i].EPS_DESIGN_CODE.split('_');
                 inputDatas[i] = {
-                    shop: gridData[i].REQUEST,
+                    shop: gridData[i].REQUESTER,
                     template: templateCode[0],
                     device: templateCode[1],
                     designCode: epsDesignCode[0],
@@ -163,7 +177,7 @@ $(document).ready(function () {
                 shopCnt++;
             }
 
-            alert(`${shopCnt} 개의 발주서가 생성되었습니다.`);
+            alert(`[${outputRoot}] 폴더에 ${shopCnt} 개의 발주서가 생성되었습니다.`);
         }
         catch (e) {
             console.log(`[${e.name}] ${e.message}`);
@@ -196,6 +210,7 @@ var createOrderPaper = function (rawData) {
 
     $templateArea.load('./resources/order-template.html', () => {
         $('#shop').text(rawData[0].shop);
+        $('#orderDate').text(orderDate);
 
         let total = {
             caseQty: 0,
@@ -227,7 +242,7 @@ var createOrderPaper = function (rawData) {
         setOrderDetailTemplateTab(orderDetailDataMap);
 
 
-        fs.writeFile(`C:/발주서_${rawData[0].shop}_20180628.html`, $templateArea.html(), 'utf8', function (err) {
+        fs.writeFile(`${outputRoot}/${rawData[0].shop}_20180628_매장발주서.html`, $templateArea.html(), 'utf8', function (err) {
             if (err) {
                 throw err;
             }
@@ -443,69 +458,70 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
     });
 };
 
+// 그리드
 let htModule = (function () {
-    const settings = {
-        container: document.getElementById('grid'),
-        $xlf: $('#xlf')
-    };
+  const settings = {
+    container: document.getElementById('grid'),
+    $xlf: $('#xlf')
+  };
 
-    const handsonTable = new Handsontable(settings.container, {
-        data: gridData,
-        // dataSchema: {
-        //     epsDesignCode: null,
-        //     templateCode: null,
-        //     designSubCode: null,
-        //     quantity: null,
-        //     request: null
-        // },
-        search: true,
-        // startRows: 0,
-        // startCols: 2,
-        width: 850,
-        height: 395,
-        colWidths: [200, 150, 140, 140, 150],
-        manualColumnResize: true,
-        rowHeights: 25,
-        rowHeaders: true,
-        colHeaders: ['EPS_DESIGN_CODE', 'TEMPLATE_CODE', 'DESIGN_SUB_CODE', 'QUANTITY', 'REQUEST'],
-        columns: [
-            {data: 'EPS_DESIGN_CODE'},
-            {data: 'TEMPLATE_CODE'},
-            {data: 'DESIGN_SUB_CODE'},
-            {data: 'QUANTITY'},
-            {data: 'REQUEST'}
-        ],
-        // minSpareRows: 10000,
-        maxRows: 10000
+  const handsonTable = new Handsontable(settings.container, {
+    data: gridData,
+    // dataSchema: {
+    //     epsDesignCode: null,
+    //     templateCode: null,
+    //     designSubCode: null,
+    //     quantity: null,
+    //     request: null
+    // },
+    search: true,
+    // startRows: 0,
+    // startCols: 2,
+    width: 850,
+    height: 395,
+    colWidths: [200, 150, 140, 140, 150],
+    manualColumnResize: true,
+    rowHeights: 25,
+    rowHeaders: true,
+    colHeaders: ['EPS_DESIGN_CODE', 'TEMPLATE_CODE', 'DESIGN_SUB_CODE', 'QUANTITY', 'REQUESTER'],
+    columns: [
+      {data: 'EPS_DESIGN_CODE'},
+      {data: 'TEMPLATE_CODE'},
+      {data: 'DESIGN_SUB_CODE'},
+      {data: 'QUANTITY'},
+      {data: 'REQUESTER'}
+    ],
+    // minSpareRows: 10000,
+    maxRows: 10000
+  });
+
+  const bind = function () {
+
+    settings.$xlf.change(function (event) {
+      handleFile(event, function (json) {
+        // var str = JSON.stringify(json, null, 2);
+        // console.log('str='+str);
+        const firstKey = Object.keys(json)[0];
+        gridData = json[firstKey];
+        refresh();
+      });
     });
+  };
 
-    var bind = function () {
+  const init = function () {
+    bind();
+  };
 
-        settings.$xlf.change(function (event) {
-            handleFile(event, function (json) {
-                // var str = JSON.stringify(json, null, 2);
-                // console.log('str='+str);
-                const firstKey = Object.keys(json)[0];
-                gridData = json[firstKey];
-                refresh();
-            });
-        });
-    };
+  /**
+   * 그리드 새로고침 (gridData 로드)
+   */
+  const refresh = function () {
+    handsonTable.loadData(gridData);
+  };
 
-    var init = function () {
-        bind();
-    };
-
-    /**
-     * 그리드 새로고침 (gridData 로드)
-     */
-    const refresh = function () {
-        handsonTable.loadData(gridData);
-    };
-
-    return {
-        init: init
-    }
+  return {
+    init: init
+  }
 })();
 
 $(function () {

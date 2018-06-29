@@ -7,25 +7,25 @@ const thumbnailRoot = 'C:/thumbnail';
 const outputRoot = 'C:/발주서';
 
 const templates = new Map([
-    ['SOFTT'     , {type: 'case', label: '소프트케이스'        , price: 5500}],
-    ['BLACK'     , {type: 'case', label: '블랙케이스'          , price: 7700}],
-    ['TWINK'     , {type: 'case', label: '트윙클케이스'        , price: 8800}],
-    ['LEATH'     , {type: 'case', label: '레더케이스'          , price: 8800}],
-    ['SPRIT'     , {type: 'case', label: '스피릿케이스'        , price: 9350}],
-    ['SPRITSP'   , {type: 'case', label: '스피릿케이스(커버)'  , price: 4400}],
-    ['BTTRY_5CA' , {type: 'acce', label: '보조배터리 5,000mAh' , price: 12100}],
-    ['BTTRY_10CA', {type: 'acce', label: '보조배터리 10,000mAh', price: 18700}],
-    ['COILL'     , {type: 'acce', label: '코일룩'              , price: 4400}],
-    ['SMART'     , {type: 'acce', label: '스마트클리너'        , price: 1650}],
-    ['GLASS'     , {type: 'acce', label: '강화유리'            , price: 2200}],
-    ['FGLASS'    , {type: 'acce', label: '풀커버'              , price: 6600}],
-    ['FFGLAS'    , {type: 'acce', label: '전면부착풀커버'      , price: 13200}],
-    ['IPJEN'     , {type: 'acce', label: '아이폰젠더'          , price: 550}],
-    ['CABLEPK'   , {type: 'acce', label: '애플케이블 핑크'     , price: 3300}],
-    ['CABLESB'   , {type: 'acce', label: '애플케이블 실버'     , price: 3300}],
-    ['FDLED'     , {type: 'acce', label: '접이식LED'           , price: 6600}],
-    ['GOMLED'    , {type: 'acce', label: '곰토끼LED'           , price: 4620}],
-    ['CYLED'     , {type: 'acce', label: '원형LED'             , price: 5500}],
+    ['SOFTT'      , {type: 'case', label: '소프트케이스'        , price: 5500}],
+    ['BLACK'      , {type: 'case', label: '블랙케이스'          , price: 7700}],
+    ['TWINK'      , {type: 'case', label: '트윙클케이스'        , price: 8800}],
+    ['LEATH'      , {type: 'case', label: '레더케이스'          , price: 8800}],
+    ['SPRIT'      , {type: 'case', label: '스피릿케이스'        , price: 9350}],
+    ['SPRITSP'    , {type: 'case', label: '스피릿케이스(커버)'  , price: 4400}],
+    ['GLASS'      , {type: 'case', label: '강화유리'            , price: 2200}],
+    ['FGLASS'     , {type: 'case', label: '풀커버'              , price: 6600}],
+    ['FFGLASS'    , {type: 'case', label: '전면부착풀커버'      , price: 13200}],
+    ['BTTRY_5CA'  , {type: 'acce', label: '보조배터리 5,000mAh' , price: 12100}],
+    ['BTTRY_10CA' , {type: 'acce', label: '보조배터리 10,000mAh', price: 18700}],
+    ['ACC_COILL'  , {type: 'acce', label: '코일룩'              , price: 4400}],
+    ['SMART'      , {type: 'acce', label: '스마트클리너'        , price: 1650}],
+    ['IPJEN'      , {type: 'acce', label: '아이폰젠더'          , price: 550}],
+    ['CABLEPK'    , {type: 'acce', label: '애플케이블 핑크'     , price: 3300}],
+    ['CABLESB'    , {type: 'acce', label: '애플케이블 실버'     , price: 3300}],
+    ['FDLED'      , {type: 'acce', label: '접이식LED'           , price: 6600}],
+    ['GOMLED'     , {type: 'acce', label: '곰토끼LED'           , price: 4620}],
+    ['CYLED'      , {type: 'acce', label: '원형LED'             , price: 5500}],
 ]);
 
 const devices = new Map([
@@ -52,6 +52,7 @@ const devices = new Map([
     ['OG5', '옵티머스G5'],
     ['OG6', '옵티머스G6'],
     ['OG7', '옵티머스G7'],
+    ['', '단일'],
 ]);
 
 let groupBy = function(xs, key) {
@@ -91,12 +92,16 @@ $(document).ready(function () {
             // 입력 데이터 파싱, 검증
             let inputDatas = [];
             for (let i = 0; i < gridData.length; i++) {
+                let isCoill = false;
+                if (gridData[i].EPS_DESIGN_CODE.includes('ACC_COILL')) {
+                    isCoill = true;
+                }
                 let templateCode = gridData[i].TEMPLATE_CODE.split('_');
                 let epsDesignCode = gridData[i].EPS_DESIGN_CODE.split('_');
                 inputDatas[i] = {
                     shop: gridData[i].REQUESTER,
-                    template: templateCode[0],
-                    device: templateCode[1],
+                    template: isCoill ? 'ACC_COILL' : templateCode[0],
+                    device: isCoill ? '' : templateCode[1],
                     designCode: epsDesignCode[0],
                     designSubCode: gridData[i].DESIGN_SUB_CODE,
                     quantity: parseInt(gridData[i].QUANTITY)
@@ -193,7 +198,7 @@ $(document).ready(function () {
 var checkDevice = function (inputDatas) {
     let missingDevices = [];
     inputDatas.forEach((data) => {
-        if (!devices.get(data.device)) {
+        if (data.type === 'case' && !devices.get(data.device)) {
             missingDevices.push(data.device);
         }
     });
@@ -350,24 +355,24 @@ var setOrderPaperOrderRow = (orderPaperDataMap) => {
 
         let v = orderPaperDataMap.get(key)[0];
         let firstRow = `
-      <tr>
-        <td rowspan="${value.length}">${templates.get(v.template).label}</td>
-        <td></td>
-        <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${devices.get(v.device)}</a></td>
-        <td class="text-right">${v.quantity}</td>
-        <td></td>
-      </tr>`;
+          <tr>
+            <td rowspan="${value.length}"><b>${templates.get(v.template).label}</b></td>
+            <td>${v.template}-${v.device}</td>
+            <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${devices.get(v.device)}</a></td>
+            <td class="text-right">${v.quantity}</td>
+            <td></td>
+          </tr>`;
         $row.append(firstRow);
 
         for (let i = 1; i < orderPaperDataMap.get(key).length; i++) {
             v = orderPaperDataMap.get(key)[i];
             let otherRow = `
-      <tr>
-        <td></td>
-        <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${devices.get(v.device)}</a></td>
-        <td class="text-right">${v.quantity}</td>
-        <td></td>
-      </tr>`;
+              <tr>
+                <td>${v.template}-${v.device}</td>
+                <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${devices.get(v.device)}</a></td>
+                <td class="text-right">${v.quantity}</td>
+                <td></td>
+              </tr>`;
             $row.append(otherRow);
         }
 
@@ -392,41 +397,43 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
     let $tabs = $('#tabs-left');
     orderDetailDataMap.forEach((thumbnailInfo, templateKey, map) => {
         let tabHtml = `
-      <div id="tabs-${templateKey.toLowerCase()}" class="template-tab">
-        <div>`;
+          <div id="tabs-${templateKey.toLowerCase()}" class="template-tab">
+            <div>`;
         for (let deviceKey in thumbnailInfo) {
             tabHtml += `
-          <table id="${templateKey.toLowerCase()}-${deviceKey.toLowerCase()}">
-            <colgroup>
-              <col style="width: 10%">
-              <col style="width: 10%">
-              <col style="width: 10%">
-              <col style="width: 10%">
-              <col style="width: 10%">
-              <col style="width: 10%">
-              <col style="width: 10%">
-              <col style="width: 10%">
-              <col style="width: 10%">
-              <col style="width: 10%">
-            </colgroup>
-            <thead>
-              <tr>
-                <th colspan="10" class="text-red">${devices.get(deviceKey)} ${templates.get(templateKey).label}</th>
-              </tr>
-            </thead>
-            <tbody>`;
+              <table id="${templateKey.toLowerCase()}-${deviceKey.toLowerCase()}">
+                <colgroup>
+                  <col style="width: 10%">
+                  <col style="width: 10%">
+                  <col style="width: 10%">
+                  <col style="width: 10%">
+                  <col style="width: 10%">
+                  <col style="width: 10%">
+                  <col style="width: 10%">
+                  <col style="width: 10%">
+                  <col style="width: 10%">
+                  <col style="width: 10%">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th colspan="10" class="text-red">${devices.get(deviceKey)} ${templates.get(templateKey).label}</th>
+                  </tr>
+                </thead>
+                <tbody>`;
             let thumbnails = thumbnailInfo[deviceKey],
                 thmIdx = 0;
             for (let thumbnailKey in thumbnails) {
                 if (thmIdx % 10 === 0) {
                     tabHtml += '<tr>';
                 }
-                tabHtml += `<td>
+                tabHtml += `
+                    <td>
                       <div><img src="${thumbnailRoot}/${thumbnails[thumbnailKey].template}/${thumbnails[thumbnailKey].designCode}_${thumbnails[thumbnailKey].template}_${thumbnails[thumbnailKey].designSubCode}.jpg"
                                 alt="${thumbnails[thumbnailKey].designCode}_${thumbnails[thumbnailKey].template}_${thumbnails[thumbnailKey].designSubCode}"
                                 onerror="this.src='http://webagency.pe.kr/thumbnail/imagenotfound.jpg'"
                                 class="thumbnail"></div>
-                      <div class="">${thumbnails[thumbnailKey].designCode}</div>
+                      <div class="design-code">${thumbnails[thumbnailKey].designCode}</div>
+                      <div class="design-sub-code">${thumbnails[thumbnailKey].designSubCode}</div>
                       <div class="qty">${thumbnails[thumbnailKey].quantity}</div>
                     </td>`;
                 thmIdx++;
@@ -438,6 +445,8 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
             for (let k = 0; k < blanks; k++) {
                 tabHtml += `<td>
                       <div><img src="https://orig00.deviantart.net/ea3c/f/2010/104/9/e/blank_page_____by_neoslashott.png" class="thumbnail"></div>
+                      <div class="design-code">&nbsp;</div>
+                      <div class="design-sub-code">&nbsp;</div>
                       <div class="qty"></div>
                     </td>`;
             }
@@ -445,14 +454,14 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
                 tabHtml += '</tr>';
             }
             tabHtml += `
-            </tbody>
-          </table>
-          <button type="button" name="templatePrint" data-tab-id="#${templateKey.toLowerCase()}-${deviceKey.toLowerCase()}">인쇄</button>
-          <br><br>`;
+                </tbody>
+              </table>
+              <button type="button" name="templatePrint" data-tab-id="#${templateKey.toLowerCase()}-${deviceKey.toLowerCase()}">인쇄</button>
+              <br><br>`;
         }
         tabHtml += `
-        </div>
-      </div>`;
+            </div>
+          </div>`;
 
         $tabs.append(tabHtml);
     });

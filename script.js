@@ -94,7 +94,7 @@ let orderDate = '';
 $(document).ready(function () {
 
     $('#create').click(() => {
-        //try {
+        try {
 
             if (!gridData) {
                 alert('주문 파일을 먼저 선택하세요.');
@@ -211,11 +211,11 @@ $(document).ready(function () {
             }
 
             alert(`[${outputRoot}] 폴더에 ${shopCnt} 개의 발주서가 생성되었습니다.`);
-        // }
-        // catch (e) {
-        //     console.log(`[${e.lineNumber}][${e.name}] ${e.message}`);
-        //     alert(e.message);
-        // }
+        }
+        catch (e) {
+            console.log(`[${e.name}] ${e.message}`);
+            alert(e.message);
+        }
     });
 });
 

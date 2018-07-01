@@ -6,26 +6,7 @@ XLSX = require('xlsx');
 const thumbnailRoot = 'C:/thumbnail';
 const outputRoot = 'C:/발주서';
 
-const platforms = [];
-platforms['BLACK'] = {type: 'case', label: '블랙케이스'          , tabGroup: 'BLACK'  , price: 7700};
-platforms['TWINK'] = {type: 'case', label: '트윙클케이스'        , tabGroup: 'TWINK'  , price: 8800};
-platforms['LEATH'] = {type: 'case', label: '레더케이스'          , tabGroup: 'LEATH'  , price: 8800};
-platforms['SOFTT'] = {type: 'case', label: '소프트케이스'        , tabGroup: 'SOFTT'  , price: 5500};
-platforms['SPRIT'] = {type: 'case', label: '스피릿케이스'        , tabGroup: 'SPRIT'  , price: 9350};
-platforms['SPRITSP'] = {type: 'case', label: '스피릿케이스(커버)'  , tabGroup: 'SPRITSP', price: 4400};
-platforms['ACC_COILL'] = {type: 'acce', label: '코일룩'              , tabGroup: 'COILL'  , price: 4400};
-platforms['SMART'] = {type: 'acce', label: '스마트클리너'        , tabGroup: 'SMART'  , price: 1650};
-platforms['BTTRY_5CA'] = {type: 'acce', label: '보조배터리 5,000mAh' , tabGroup: 'BTTRY'  , price: 12100};
-platforms['BTTRY_10CA'] = {type: 'acce', label: '보조배터리 10,000mAh', tabGroup: 'BTTRY'  , price: 18700};
-platforms['GLASS'] = {type: 'acce', label: '강화유리'            , tabGroup: 'GLASS'  , price: 2200};
-platforms['FGLASS'] = {type: 'acce', label: '풀커버'              , tabGroup: 'GLASS'  , price: 6600};
-platforms['FFGLASS'] = {type: 'acce', label: '전면부착풀커버'      , tabGroup: 'GLASS'  , price: 13200};
-platforms['IPJEN'] = {type: 'acce', label: '아이폰젠더'          , tabGroup: 'IPJEN'  , price: 550};
-platforms['CABLEPK'] = {type: 'acce', label: '애플케이블 핑크'     , tabGroup: 'CABLE'  , price: 3300};
-platforms['CABLESB'] = {type: 'acce', label: '애플케이블 실버'     , tabGroup: 'CABLE'  , price: 3300};
-platforms['FDLED'] = {type: 'acce', label: '접이식LED'           , tabGroup: 'LED'    , price: 6600};
-platforms['GOMLED'] = {type: 'acce', label: '곰토끼LED'           , tabGroup: 'LED'    , price: 4620};
-platforms['CYLED'] = {type: 'acce', label: '원형LED'             , tabGroup: 'LED'    , price: 5500};
+var platforms = {};
 
 const tabGroup = new Map([
     ['BLACK'  , {label: '블랙케이스'    , sort: 1}],
@@ -91,7 +72,25 @@ let orderDate = '';
 
 $(document).ready(function () {
 
-    $('#create').click(() => {
+    fs.readFile(__dirname+'/config/platforms.json', 'utf8', function (err, data) {
+        platforms = JSON.parse(data);
+        platformsHtModule.init();
+    });
+
+    // console.log('platforms=' + JSON.stringify(platforms));
+
+    $('a.nav-link').click(function () {
+        // 메뉴탭 활성/비활성
+        $('a.nav-link').removeClass('active');
+        $(this).addClass('active');
+
+        // 클릭한 페이지 보이기
+        let contentId = $(this).attr('href');
+        $('.tab-content').hide();
+        $(contentId).show();
+    });
+
+    $('#create').click(function () {
         try {
 
             if (!gridData) {
@@ -215,6 +214,10 @@ $(document).ready(function () {
             alert(e.message);
         }
     });
+
+    $('#platformSave').click(function () {
+        alert('죄송합니다. 준비중입니다.');
+    });
 });
 
 var parseEpsDesignCode = function (epsDesignCode) {
@@ -232,18 +235,26 @@ var parseEpsDesignCode = function (epsDesignCode) {
             design: arrEpsDesignCode[0],
             template: exceptionTemplate,
             device: arrEpsDesignCode[2],
-            tabGroup: platforms[exceptionTemplate].tabGroup
+            tabGroup: getPlatform(exceptionTemplate).tabGroup
         };
     } else {
         return {
             design: arrEpsDesignCode[0],
             template: arrEpsDesignCode[1],
             device: arrEpsDesignCode[2],
-            tabGroup: platforms[arrEpsDesignCode[1]].tabGroup
+            tabGroup: getPlatform(arrEpsDesignCode[1]).tabGroup
         };
     }
 
     return false;
+};
+
+var getPlatform = function (platformCode) {
+    for (let key in platforms) {
+        if (platforms[key].platform === platformCode) {
+            return platforms[key];
+        }
+    }
 };
 
 /**
@@ -278,7 +289,7 @@ var createOrderPaper = function (rawData) {
             totalPrice: 0
         };
         for (let i = 0; i < rawData.length; i++) {
-            let tmpl = platforms[rawData[i].template];
+            let tmpl = getPlatform(rawData[i].template);
             if (tmpl.type === 'case') {
                 total.caseQty += parseInt(rawData[i].quantity);
             } else {
@@ -609,6 +620,53 @@ let htModule = (function () {
   return {
     init: init
   }
+})();
+
+
+// 상품관리 그리드
+const platformsHtModule = (function () {
+    const settings = {
+        container: document.getElementById('platform-grid')
+    };
+
+    const handsonTable = new Handsontable(settings.container, {
+        data: platforms,
+        // dataSchema: {
+        //     platform: null,
+        //     type: null,
+        //     label: null,
+        //     tabGroup: null,
+        //     price: null
+        // },
+        search: true,
+        // startRows: 0,
+        // startCols: 2,
+        width: 850,
+        height: 395,
+        colWidths: [150, 100, 200, 150, 150],
+        manualColumnResize: true,
+        rowHeights: 25,
+        rowHeaders: true,
+        colHeaders: ['탭그룹', '플랫폼', '타입', '이름', '가격'],
+        columns: [
+            {data: 'tabGroup'},
+            {data: 'platform'},
+            {data: 'type'},
+            {data: 'label'},
+            {data: 'price'}
+        ],
+        // minSpareRows: 10000,
+        maxRows: 10000
+    });
+
+    const init = function () {
+        handsonTable.loadData(platforms);
+        console.log('platforms==>'+JSON.stringify(platforms));
+    };
+
+    return {
+        init: init
+    }
 })();
 
 $(function () {

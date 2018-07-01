@@ -7,8 +7,8 @@
     "start": "electron .",
     "build": "electron-packager . orderpaper --out=dist/ --asar --overwrite --all",
     "package": "npm-run-all package:*",
-    "package:win32": "electron-packager . orderpaper --platform=win32 --arch=ia32 --asar --out=dist/ --overwrite",
-    "package:win64": "electron-packager . orderpaper --platform=win32 --arch=x64 --asar --out=dist/ --overwrite",
+    "package:win32": "electron-packager . orderpaper --platform=win32 --arch=ia32 --out=dist/ --overwrite",
+    "package:win64": "electron-packager . orderpaper --platform=win32 --arch=x64 --out=dist/ --overwrite",
     "package:installer": "node ./script/installer.js"
   },
   "dependencies": {

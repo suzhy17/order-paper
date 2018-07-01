@@ -6,27 +6,26 @@ XLSX = require('xlsx');
 const thumbnailRoot = 'C:/thumbnail';
 const outputRoot = 'C:/발주서';
 
-const templates = new Map([
-    ['BLACK'     , {type: 'case', label: '블랙케이스'          , tabGroup: 'BLACK'  , price: 7700}],
-    ['TWINK'     , {type: 'case', label: '트윙클케이스'        , tabGroup: 'TWINK'  , price: 8800}],
-    ['LEATH'     , {type: 'case', label: '레더케이스'          , tabGroup: 'LEATH'  , price: 8800}],
-    ['SOFTT'     , {type: 'case', label: '소프트케이스'        , tabGroup: 'SOFTT'  , price: 5500}],
-    ['SPRIT'     , {type: 'case', label: '스피릿케이스'        , tabGroup: 'SPRIT'  , price: 9350}],
-    ['SPRITSP'   , {type: 'case', label: '스피릿케이스(커버)'  , tabGroup: 'SPRITSP', price: 4400}],
-    ['ACC_COILL' , {type: 'acce', label: '코일룩'              , tabGroup: 'COILL'  , price: 4400}],
-    ['SMART'     , {type: 'acce', label: '스마트클리너'        , tabGroup: 'SMART'  , price: 1650}],
-    ['BTTRY_5CA' , {type: 'acce', label: '보조배터리 5,000mAh' , tabGroup: 'BTTRY'  , price: 12100}],
-    ['BTTRY_10CA', {type: 'acce', label: '보조배터리 10,000mAh', tabGroup: 'BTTRY'  , price: 18700}],
-    ['GLASS'     , {type: 'acce', label: '강화유리'            , tabGroup: 'GLASS'  , price: 2200}],
-    ['FGLASS'    , {type: 'acce', label: '풀커버'              , tabGroup: 'GLASS'  , price: 6600}],
-    ['FFGLASS'   , {type: 'acce', label: '전면부착풀커버'      , tabGroup: 'GLASS'  , price: 13200}],
-    ['IPJEN'     , {type: 'acce', label: '아이폰젠더'          , tabGroup: 'IPJEN'  , price: 550}],
-    ['CABLEPK'   , {type: 'acce', label: '애플케이블 핑크'     , tabGroup: 'CABLE'  , price: 3300}],
-    ['CABLESB'   , {type: 'acce', label: '애플케이블 실버'     , tabGroup: 'CABLE'  , price: 3300}],
-    ['FDLED'     , {type: 'acce', label: '접이식LED'           , tabGroup: 'LED'    , price: 6600}],
-    ['GOMLED'    , {type: 'acce', label: '곰토끼LED'           , tabGroup: 'LED'    , price: 4620}],
-    ['CYLED'     , {type: 'acce', label: '원형LED'             , tabGroup: 'LED'    , price: 5500}],
-]);
+const platforms = [];
+platforms['BLACK'] = {type: 'case', label: '블랙케이스'          , tabGroup: 'BLACK'  , price: 7700};
+platforms['TWINK'] = {type: 'case', label: '트윙클케이스'        , tabGroup: 'TWINK'  , price: 8800};
+platforms['LEATH'] = {type: 'case', label: '레더케이스'          , tabGroup: 'LEATH'  , price: 8800};
+platforms['SOFTT'] = {type: 'case', label: '소프트케이스'        , tabGroup: 'SOFTT'  , price: 5500};
+platforms['SPRIT'] = {type: 'case', label: '스피릿케이스'        , tabGroup: 'SPRIT'  , price: 9350};
+platforms['SPRITSP'] = {type: 'case', label: '스피릿케이스(커버)'  , tabGroup: 'SPRITSP', price: 4400};
+platforms['ACC_COILL'] = {type: 'acce', label: '코일룩'              , tabGroup: 'COILL'  , price: 4400};
+platforms['SMART'] = {type: 'acce', label: '스마트클리너'        , tabGroup: 'SMART'  , price: 1650};
+platforms['BTTRY_5CA'] = {type: 'acce', label: '보조배터리 5,000mAh' , tabGroup: 'BTTRY'  , price: 12100};
+platforms['BTTRY_10CA'] = {type: 'acce', label: '보조배터리 10,000mAh', tabGroup: 'BTTRY'  , price: 18700};
+platforms['GLASS'] = {type: 'acce', label: '강화유리'            , tabGroup: 'GLASS'  , price: 2200};
+platforms['FGLASS'] = {type: 'acce', label: '풀커버'              , tabGroup: 'GLASS'  , price: 6600};
+platforms['FFGLASS'] = {type: 'acce', label: '전면부착풀커버'      , tabGroup: 'GLASS'  , price: 13200};
+platforms['IPJEN'] = {type: 'acce', label: '아이폰젠더'          , tabGroup: 'IPJEN'  , price: 550};
+platforms['CABLEPK'] = {type: 'acce', label: '애플케이블 핑크'     , tabGroup: 'CABLE'  , price: 3300};
+platforms['CABLESB'] = {type: 'acce', label: '애플케이블 실버'     , tabGroup: 'CABLE'  , price: 3300};
+platforms['FDLED'] = {type: 'acce', label: '접이식LED'           , tabGroup: 'LED'    , price: 6600};
+platforms['GOMLED'] = {type: 'acce', label: '곰토끼LED'           , tabGroup: 'LED'    , price: 4620};
+platforms['CYLED'] = {type: 'acce', label: '원형LED'             , tabGroup: 'LED'    , price: 5500};
 
 const tabGroup = new Map([
     ['BLACK'  , {label: '블랙케이스'    , sort: 1}],
@@ -76,7 +75,6 @@ const devices = new Map([
     ['OG7', '옵티머스G7'],
     ['5CA', '5,000mAh'],
     ['10CA', '10,000mAh'],
-    ['OG7', '옵티머스G7'],
     ['', '단일'],
 ]);
 
@@ -234,14 +232,14 @@ var parseEpsDesignCode = function (epsDesignCode) {
             design: arrEpsDesignCode[0],
             template: exceptionTemplate,
             device: arrEpsDesignCode[2],
-            tabGroup: templates.get(exceptionTemplate).tabGroup
+            tabGroup: platforms[exceptionTemplate].tabGroup
         };
     } else {
         return {
             design: arrEpsDesignCode[0],
             template: arrEpsDesignCode[1],
             device: arrEpsDesignCode[2],
-            tabGroup: templates.get(arrEpsDesignCode[1]).tabGroup
+            tabGroup: platforms[arrEpsDesignCode[1]].tabGroup
         };
     }
 
@@ -280,7 +278,7 @@ var createOrderPaper = function (rawData) {
             totalPrice: 0
         };
         for (let i = 0; i < rawData.length; i++) {
-            let tmpl = templates.get(rawData[i].template);
+            let tmpl = platforms[rawData[i].template];
             if (tmpl.type === 'case') {
                 total.caseQty += parseInt(rawData[i].quantity);
             } else {

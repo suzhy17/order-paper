@@ -119,6 +119,40 @@
 			padding-bottom: 20px;
 			text-align: center;
 		}
+
+        /*.page {*/
+            /*width: 21cm;*/
+            /*height: 257mm;*/
+            /*min-height: 29.7cm;*/
+            /*padding: 2cm;*/
+            /*margin: 0 auto;*/
+            /*background: #fff;*/
+        /*}*/
+        /*@page {*/
+            /*size: A4;*/
+            /*margin: 0;*/
+        /*}*/
+        /*@media print {*/
+            /*html, body {*/
+                /*width: 210mm;*/
+                /*height: 297mm;*/
+            /*}*/
+            /*.page {*/
+                /*margin: 0;*/
+                /*border: initial;*/
+                /*width: initial;*/
+                /*min-height: initial;*/
+                /*box-shadow: initial;*/
+                /*background: initial;*/
+                /*page-break-after: always;*/
+            /*}*/
+        /*}*/
+
+        @media print {
+            #print-area { page-break-after: always; }
+            body { border:0; margin:0; padding:0;  }
+        }
+
 	</style>
 
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>

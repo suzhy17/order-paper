@@ -1,12 +1,15 @@
 'use strict';
 
 const fs = require('fs');
+const path = require('path');
 XLSX = require('xlsx');
 
 const thumbnailRoot = 'C:/thumbnail';
-const outputRoot = 'C:/발주서';
+const outputRoot = `C:${path.sep}발주서`;
 
-var platforms = {};
+var platforms = [];
+
+var devices = [];
 
 const tabGroup = new Map([
     ['BLACK'  , {label: '블랙케이스'    , sort: 1}],
@@ -30,34 +33,6 @@ const exceptionTemplates = [
     'ACC_COILL'
 ];
 
-const devices = new Map([
-    ['IP5', '아이폰5'],
-    ['IP6', '아이폰6'],
-    ['IP7', '아이폰7'],
-    ['IP8', '아이폰8'],
-    ['IP6P', '아이폰6플러스'],
-    ['IP7P', '아이폰7플러스'],
-    ['IP8P', '아이폰8플러스'],
-    ['IPX', '아이폰X'],
-    ['IPFX', '아이폰X'],
-    ['GS6', '갤럭시S6'],
-    ['GS6E', '갤럭시S6엣지'],
-    ['GS7', '갤럭시S7'],
-    ['GS7E', '갤럭시S7엣지'],
-    ['GS8', '갤럭시S8'],
-    ['GS8P', '갤럭시S8플러스'],
-    ['GS9', '갤럭시S9'],
-    ['GS9P', '갤럭시S9플러스'],
-    ['GN5', '갤럭시노트5'],
-    ['GN7', '갤럭시노트7/FE'],
-    ['GN8', '갤럭시노트8'],
-    ['OG5', '옵티머스G5'],
-    ['OG6', '옵티머스G6'],
-    ['OG7', '옵티머스G7'],
-    ['5CA', '5,000mAh'],
-    ['10CA', '10,000mAh'],
-    ['', '단일'],
-]);
 
 let groupBy = function(xs, key) {
     return xs.reduce(function(rv, x) {
@@ -68,17 +43,25 @@ let groupBy = function(xs, key) {
 
 let gridData = [];
 var $templateArea = $('#templateArea');
-let orderDate = '';
+let orderDate = '', outputDate = '';
 
 $(document).ready(function () {
 
+    // 상품 정보 로드
     fs.readFile(__dirname+'/config/platforms.json', 'utf8', function (err, data) {
         platforms = JSON.parse(data);
         platformsHtModule.init();
     });
 
+    // 기기 정보 로드
+    fs.readFile(__dirname+'/config/devices.json', 'utf8', function (err, data) {
+        devices = JSON.parse(data);
+        devicesHtModule.init();
+    });
+
     // console.log('platforms=' + JSON.stringify(platforms));
 
+    // 상단 메뉴 선택
     $('a.nav-link').click(function () {
         // 메뉴탭 활성/비활성
         $('a.nav-link').removeClass('active');
@@ -88,6 +71,30 @@ $(document).ready(function () {
         let contentId = $(this).attr('href');
         $('.tab-content').hide();
         $(contentId).show();
+    });
+
+    // 상품 정보 저장
+    $('#platformSave').click(function () {
+        let enabledPlatforms = platforms.filter((data) => data.platform);
+
+        fs.writeFile(__dirname+'/config/platforms.json', JSON.stringify(enabledPlatforms), 'utf8', function (err) {
+            if (err) {
+                throw err;
+            }
+            alert('저장되었습니다.');
+        });
+    });
+
+    // 기기 정보 저장
+    $('#deviceSave').click(function () {
+        let enabledDevices = devices.filter((data) => data.label);
+
+        fs.writeFile(__dirname+'/config/devices.json', JSON.stringify(enabledDevices), 'utf8', function (err) {
+            if (err) {
+                throw err;
+            }
+            alert('저장되었습니다.');
+        });
     });
 
     $('#create').click(function () {
@@ -105,6 +112,7 @@ $(document).ready(function () {
                 if (lastName[0].length !== 8) {
                     throw "order date";
                 }
+                outputDate = lastName[0];
                 orderDate = `${parseInt(lastName[0].substring(4, 6))}월 ${parseInt(lastName[0].substring(6, 8))}일`;
                 // alert('orderDate=' + orderDate);
             } catch (e) {
@@ -214,10 +222,6 @@ $(document).ready(function () {
             alert(e.message);
         }
     });
-
-    $('#platformSave').click(function () {
-        alert('죄송합니다. 준비중입니다.');
-    });
 });
 
 var parseEpsDesignCode = function (epsDesignCode) {
@@ -257,6 +261,15 @@ var getPlatform = function (platformCode) {
     }
 };
 
+var getDevice = function (deviceCode) {
+    for (let key in devices) {
+        if (devices[key].device === deviceCode) {
+            return devices[key];
+        }
+    }
+    return {device: '', label: ''}
+};
+
 /**
  * 존재하지 않는 기기코드가 있는지 체크
  * @param inputDatas
@@ -264,7 +277,7 @@ var getPlatform = function (platformCode) {
 var checkDevice = function (inputDatas) {
     let missingDevices = [];
     inputDatas.forEach((data) => {
-        if (data.type === 'case' && !devices.get(data.device)) {
+        if (data.type === 'case' && !getDevice(data.device).device) {
             missingDevices.push(data.device);
         }
     });
@@ -312,8 +325,22 @@ var createOrderPaper = function (rawData) {
         let orderDetailDataMap = createThumbnailData(rawData);
         setOrderDetailTemplateTab(orderDetailDataMap);
 
+        const sep = path.sep;
+        const outputDir = outputRoot + path.sep + outputDate;
+        console.log(`outputDir=${outputDir}`);
+        const initDir = path.isAbsolute(outputDir) ? sep : '';
+        outputDir.split(sep).reduce((parentDir, childDir) => {
+            const curDir = path.resolve(parentDir, childDir);
+            console.log(`Dir Name: ${curDir}`);
+            if (!fs.existsSync(curDir)) {
+                console.log('Created');
+                fs.mkdirSync(curDir);
+            }
 
-        fs.writeFile(`${outputRoot}/${rawData[0].shop}_20180628_매장발주서.html`, $templateArea.html(), 'utf8', function (err) {
+            return curDir;
+        }, initDir);
+
+        fs.writeFile(`${outputDir}/${rawData[0].shop}_${outputDate}_매장발주서.html`, $templateArea.html(), 'utf8', function (err) {
             if (err) {
                 throw err;
             }
@@ -424,13 +451,13 @@ var setOrderPaperOrderRow = (orderPaperDataMap) => {
 
     orderPaperDataMap.forEach((value, key, map) => {
         console.log(`orderPaperDataMap.get(${key})=${JSON.stringify(orderPaperDataMap.get(key))}`);
-
         let v = orderPaperDataMap.get(key)[0];
+        let sumQuantity = v.quantity;
         let firstRow = `
           <tr>
             <td rowspan="${value.length}"><b>${tabGroup.get(v.tabGroup).label}</b></td>
             <td>${v.template}${v.device ? '-' : ''}${v.device}</td>
-            <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${devices.get(v.device) || '단일'}</a></td>
+            <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${getDevice(v.device).label || '단일'}</a></td>
             <td class="text-right">${v.quantity}</td>
             <td></td>
           </tr>`;
@@ -438,16 +465,27 @@ var setOrderPaperOrderRow = (orderPaperDataMap) => {
 
         for (let i = 1; i < orderPaperDataMap.get(key).length; i++) {
             v = orderPaperDataMap.get(key)[i];
+            sumQuantity += v.quantity;
             let otherRow = `
               <tr>
                 <td>${v.template}${v.device ? '-' : ''}${v.device}</td>
-                <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${devices.get(v.device) || '단일'}</a></td>
+                <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${getDevice(v.device).label || '단일'}</a></td>
                 <td class="text-right">${v.quantity}</td>
                 <td></td>
               </tr>`;
             $row.append(otherRow);
         }
+        console.log(`getPlatform(${v.template}).type=${getPlatform(v.template).type}`);
 
+        // if (getPlatform(v.template).type === 'case') {
+            let summaryRow = `
+            <tr>
+                <td colspan="3" class="bg-orange"><b>${tabGroup.get(v.tabGroup).label} 합계</b></td>
+                <td class="bg-orange text-right">${sumQuantity}</td>
+                <td class="bg-orange"></td>
+            </tr>`;
+            $row.append(summaryRow);
+        // }
     });
 };
 
@@ -505,7 +543,7 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
                 </colgroup>
                 <thead>
                   <tr>
-                    <th colspan="10" class="text-red">${devices.get(deviceKey) || '' } ${tabGroup.get(templateKey).label}</th>
+                    <th colspan="10" class="text-red">${getDevice(deviceKey).label || '' } ${tabGroup.get(templateKey).label}</th>
                   </tr>
                 </thead>
                 <tbody>`;
@@ -643,7 +681,7 @@ const platformsHtModule = (function () {
         // startCols: 2,
         width: 850,
         height: 395,
-        colWidths: [150, 100, 200, 150, 150],
+        colWidths: [150, 150, 100, 200, 150],
         manualColumnResize: true,
         rowHeights: 25,
         rowHeaders: true,
@@ -655,13 +693,51 @@ const platformsHtModule = (function () {
             {data: 'label'},
             {data: 'price'}
         ],
-        // minSpareRows: 10000,
-        maxRows: 10000
+        minSpareRows: 100,
+        maxRows: 100,
+        allowInsertRow: true
     });
 
     const init = function () {
         handsonTable.loadData(platforms);
         console.log('platforms==>'+JSON.stringify(platforms));
+    };
+
+    return {
+        init: init
+    }
+})();
+
+// 기기관리 그리드
+const devicesHtModule = (function () {
+    const settings = {
+        container: document.getElementById('device-grid')
+    };
+
+    const handsonTable = new Handsontable(settings.container, {
+        data: devices,
+        search: true,
+        // startRows: 0,
+        // startCols: 2,
+        width: 850,
+        height: 395,
+        colWidths: [300, 400],
+        manualColumnResize: true,
+        rowHeights: 25,
+        rowHeaders: true,
+        colHeaders: ['기기코드', '기기명'],
+        columns: [
+            {data: 'device'},
+            {data: 'label'}
+        ],
+        minSpareRows: 100,
+        maxRows: 100,
+        allowInsertRow: true
+    });
+
+    const init = function () {
+        handsonTable.loadData(devices);
+        console.log('platforms==>'+JSON.stringify(devices));
     };
 
     return {

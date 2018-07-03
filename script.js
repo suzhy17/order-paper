@@ -11,26 +11,15 @@ var platforms = [];
 
 var devices = [];
 
-const tabGroup = new Map([
-    ['BLACK'  , {label: '블랙케이스'    , sort: 1}],
-    ['TWINK'  , {label: '트윙클케이스'  , sort: 2}],
-    ['LEATH'  , {label: '레더케이스'    , sort: 3}],
-    ['SOFTT'  , {label: '소프트케이스'  , sort: 4}],
-    ['SPRIT'  , {label: '스피릿케이스'  , sort: 5}],
-    ['SPRITSP', {label: '디자인커버'    , sort: 6}],
-    ['COILL'  , {label: '코일룩'        , sort: 7}],
-    ['SMART'  , {label: '스마트클리너'  , sort: 8}],
-    ['BTTRY'  , {label: '보조배터리'    , sort: 9}],
-    ['GLASS'  , {label: '강화유리'      , sort: 10}],
-    ['IPJEN'  , {label: '아이폰젠더'    , sort: 11}],
-    ['CABLE'  , {label: '애플케이블'    , sort: 12}],
-    ['LED'    , {label: 'LED'           , sort: 13}],
-]);
+var tabGroups = [],
+    tabGroupCodes = [];
 
 const exceptionTemplates = [
     'BTTRY_5CA',
     'BTTRY_10CA',
-    'ACC_COILL'
+    'ACC_COILL',
+    'ACC_CABLESB',
+    'ACC_CABLEPK'
 ];
 
 
@@ -47,6 +36,20 @@ let orderDate = '', outputDate = '';
 
 $(document).ready(function () {
 
+    // 탭그룹 정보 로드
+    fs.readFile(__dirname+'/config/tabGroups.json', 'utf8', function (err, data) {
+        tabGroups = JSON.parse(data);
+
+        // 플랫폼 그리드에서 탭그룹을 드롭다운 메뉴로 선택하도록 한다.
+        tabGroups = tabGroups.filter((data) => data.code);
+        tabGroupCodes = [];
+        tabGroups.forEach(function (tg) {
+            tabGroupCodes.push(tg.code);
+        });
+
+        tabGroupsHtModule.init();
+    });
+
     // 상품 정보 로드
     fs.readFile(__dirname+'/config/platforms.json', 'utf8', function (err, data) {
         platforms = JSON.parse(data);
@@ -62,7 +65,9 @@ $(document).ready(function () {
     // console.log('platforms=' + JSON.stringify(platforms));
 
     // 상단 메뉴 선택
-    $('a.nav-link').click(function () {
+    $('a.nav-link').click(function (event) {
+        event.preventDefault();
+
         // 메뉴탭 활성/비활성
         $('a.nav-link').removeClass('active');
         $(this).addClass('active');
@@ -85,6 +90,25 @@ $(document).ready(function () {
         });
     });
 
+    // 탭그룹 정보 저장
+    $('#tabGroupSave').click(function () {
+        let enabledTabGroups = tabGroups.filter((data) => data.code);
+
+        fs.writeFile(__dirname+'/config/tabGroups.json', JSON.stringify(enabledTabGroups), 'utf8', function (err) {
+            if (err) {
+                throw err;
+            }
+            tabGroupCodes = [];
+
+            enabledTabGroups.forEach(function (tg) {
+                tabGroupCodes.push(tg.code);
+                console.log(`tg.code=${tg.code}`);
+            });
+            platformsHtModule.init();
+            alert('저장되었습니다.');
+        });
+    });
+
     // 기기 정보 저장
     $('#deviceSave').click(function () {
         let enabledDevices = devices.filter((data) => data.label);
@@ -98,7 +122,7 @@ $(document).ready(function () {
     });
 
     $('#create').click(function () {
-        try {
+        // try {
 
             if (!gridData) {
                 alert('주문 파일을 먼저 선택하세요.');
@@ -167,27 +191,33 @@ $(document).ready(function () {
             // 정렬
             rawData = rawData.sort((a, b) => {
                 if (a.shop === b.shop) {
-                    if (a.template === b.template) {
-                        if (a.device === b.device) {
-                            if (a.designCode === b.designCode) {
-                                if (a.designSubCode === b.designSubCode) {
-                                    return 0;
-                                } else if (a.designSubCode < b.designSubCode) {
+                    if (getTabGroup(a.tabGroup).sort === getTabGroup(b.tabGroup).sort) {
+                        if (a.template === b.template) {
+                            if (a.device === b.device) {
+                                if (a.designCode === b.designCode) {
+                                    if (a.designSubCode === b.designSubCode) {
+                                        return 0;
+                                    } else if (a.designSubCode < b.designSubCode) {
+                                        return -1;
+                                    } else {
+                                        return 1;
+                                    }
+                                } else if (a.designCode < b.designCode) {
                                     return -1;
                                 } else {
                                     return 1;
                                 }
-                            } else if (a.designCode < b.designCode) {
+                            } else if (a.device < b.device) {
                                 return -1;
                             } else {
                                 return 1;
                             }
-                        } else if (a.device < b.device) {
+                        } else if (a.template < b.template) {
                             return -1;
                         } else {
                             return 1;
                         }
-                    } else if (a.template < b.template) {
+                    } else if (getTabGroup(a.tabGroup).sort < getTabGroup(b.tabGroup).sort) {
                         return -1;
                     } else {
                         return 1;
@@ -216,11 +246,11 @@ $(document).ready(function () {
             }
 
             alert(`[${outputRoot}] 폴더에 ${shopCnt} 개의 발주서가 생성되었습니다.`);
-        }
-        catch (e) {
-            console.log(`[${e.name}] ${e.message}`);
-            alert(e.message);
-        }
+        // }
+        // catch (e) {
+        //     console.log(`[${e.name}] ${e.message}`);
+        //     alert(e.message);
+        // }
     });
 });
 
@@ -249,8 +279,14 @@ var parseEpsDesignCode = function (epsDesignCode) {
             tabGroup: getPlatform(arrEpsDesignCode[1]).tabGroup
         };
     }
+};
 
-    return false;
+var getTabGroup = function (tabGroup) {
+    for (let key in tabGroups) {
+        if (tabGroups[key].code === tabGroup) {
+            return tabGroups[key];
+        }
+    }
 };
 
 var getPlatform = function (platformCode) {
@@ -455,7 +491,7 @@ var setOrderPaperOrderRow = (orderPaperDataMap) => {
         let sumQuantity = v.quantity;
         let firstRow = `
           <tr>
-            <td rowspan="${value.length}"><b>${tabGroup.get(v.tabGroup).label}</b></td>
+            <td rowspan="${value.length}"><b>${getTabGroup(v.tabGroup).label}</b></td>
             <td>${v.template}${v.device ? '-' : ''}${v.device}</td>
             <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${getDevice(v.device).label || '단일'}</a></td>
             <td class="text-right">${v.quantity}</td>
@@ -480,7 +516,7 @@ var setOrderPaperOrderRow = (orderPaperDataMap) => {
         // if (getPlatform(v.template).type === 'case') {
             let summaryRow = `
             <tr>
-                <td colspan="3" class="bg-orange"><b>${tabGroup.get(v.tabGroup).label} 합계</b></td>
+                <td colspan="3" class="bg-orange"><b>${getTabGroup(v.tabGroup).label} 합계</b></td>
                 <td class="bg-orange text-right">${sumQuantity}</td>
                 <td class="bg-orange"></td>
             </tr>`;
@@ -505,9 +541,9 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
 
     // 정렬
     tabKeys = tabKeys.sort((a, b) => {
-        if (tabGroup.get(a).sort === tabGroup.get(b).sort) {
+        if (getTabGroup(a).sort === getTabGroup(b).sort) {
             return 0;
-        } else if (tabGroup.get(a).sort < tabGroup.get(b).sort) {
+        } else if (getTabGroup(a).sort < getTabGroup(b).sort) {
             return -1;
         } else {
             return 1;
@@ -515,7 +551,7 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
     });
 
     tabKeys.forEach((key) => {
-        let menuItem = `<li><a href="#tabs-${key.toLowerCase()}">${tabGroup.get(key).label}</a></li>`;
+        let menuItem = `<li><a href="#tabs-${key.toLowerCase()}">${getTabGroup(key).label}</a></li>`;
         console.log(`menuItem=${menuItem}`);
         $leftMenu.append(menuItem);
     });
@@ -543,7 +579,7 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
                 </colgroup>
                 <thead>
                   <tr>
-                    <th colspan="10" class="text-red">${getDevice(deviceKey).label || '' } ${tabGroup.get(templateKey).label}</th>
+                    <th colspan="10" class="text-red">${getDevice(deviceKey).label || '' } ${getTabGroup(templateKey).label}</th>
                   </tr>
                 </thead>
                 <tbody>`;
@@ -667,40 +703,52 @@ const platformsHtModule = (function () {
         container: document.getElementById('platform-grid')
     };
 
-    const handsonTable = new Handsontable(settings.container, {
-        data: platforms,
-        // dataSchema: {
-        //     platform: null,
-        //     type: null,
-        //     label: null,
-        //     tabGroup: null,
-        //     price: null
-        // },
-        search: true,
-        // startRows: 0,
-        // startCols: 2,
-        width: 850,
-        height: 395,
-        colWidths: [150, 150, 100, 200, 150],
-        manualColumnResize: true,
-        rowHeights: 25,
-        rowHeaders: true,
-        colHeaders: ['탭그룹', '플랫폼', '타입', '이름', '가격'],
-        columns: [
-            {data: 'tabGroup'},
-            {data: 'platform'},
-            {data: 'type'},
-            {data: 'label'},
-            {data: 'price'}
-        ],
-        minSpareRows: 100,
-        maxRows: 100,
-        allowInsertRow: true
-    });
+    let handsonTable = null;
 
     const init = function () {
-        handsonTable.loadData(platforms);
-        console.log('platforms==>'+JSON.stringify(platforms));
+        handsonTable = new Handsontable(settings.container, {
+            data: platforms,
+            // dataSchema: {
+            //     platform: null,
+            //     type: null,
+            //     label: null,
+            //     tabGroup: null,
+            //     price: null
+            // },
+            search: true,
+            // startRows: 0,
+            // startCols: 2,
+            width: 850,
+            height: 395,
+            colWidths: [150, 150, 100, 200, 150],
+            manualColumnResize: true,
+            rowHeights: 25,
+            rowHeaders: true,
+            colHeaders: ['탭그룹', '플랫폼', '타입', '이름', '가격'],
+            columns: [
+                {
+                    data: 'tabGroup',
+                    type: 'dropdown',
+                    source: tabGroupCodes
+                },
+                {data: 'platform'},
+                {
+                    data: 'type',
+                    type: 'dropdown',
+                    source: ['case', 'acce']
+                },
+                {data: 'label'},
+                {
+                    data: 'price',
+                    type: 'numeric'
+                },
+            ],
+            minSpareRows: 100,
+            maxRows: 100,
+            allowInsertRow: true
+        });
+        //handsonTable.loadData(platforms);
+        //console.log('platforms==>'+JSON.stringify(platforms));
     };
 
     return {
@@ -721,7 +769,7 @@ const devicesHtModule = (function () {
         // startCols: 2,
         width: 850,
         height: 395,
-        colWidths: [300, 400],
+        colWidths: [400, 400],
         manualColumnResize: true,
         rowHeights: 25,
         rowHeaders: true,
@@ -737,7 +785,44 @@ const devicesHtModule = (function () {
 
     const init = function () {
         handsonTable.loadData(devices);
-        console.log('platforms==>'+JSON.stringify(devices));
+        //console.log('devices==>'+JSON.stringify(devices));
+    };
+
+    return {
+        init: init
+    }
+})();
+
+// 탭그룹 관리 그리드
+const tabGroupsHtModule = (function () {
+    const settings = {
+        container: document.getElementById('tabGroup-grid')
+    };
+
+    const handsonTable = new Handsontable(settings.container, {
+        data: tabGroups,
+        search: true,
+        // startRows: 0,
+        // startCols: 2,
+        width: 850,
+        height: 395,
+        colWidths: [350, 400],
+        manualColumnResize: true,
+        rowHeights: 25,
+        rowHeaders: true,
+        colHeaders: ['탭 코드', '표시 이름'],
+        columns: [
+            {data: 'code'},
+            {data: 'label'}
+        ],
+        minSpareRows: 100,
+        maxRows: 30,
+        allowInsertRow: true
+    });
+
+    const init = function () {
+        handsonTable.loadData(tabGroups);
+        console.log('tabGroup==>'+JSON.stringify(tabGroups));
     };
 
     return {

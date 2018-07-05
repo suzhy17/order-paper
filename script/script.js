@@ -36,33 +36,7 @@ let orderDate = '', outputDate = '';
 
 $(document).ready(function () {
 
-    // 탭그룹 정보 로드
-    fs.readFile(__dirname+'/config/tabGroups.json', 'utf8', function (err, data) {
-        tabGroups = JSON.parse(data);
-
-        // 플랫폼 그리드에서 탭그룹을 드롭다운 메뉴로 선택하도록 한다.
-        tabGroups = tabGroups.filter((data) => data.code);
-        tabGroupCodes = [];
-        tabGroups.forEach(function (tg) {
-            tabGroupCodes.push(tg.code);
-        });
-
-        tabGroupsHtModule.init();
-    });
-
-    // 상품 정보 로드
-    fs.readFile(__dirname+'/config/platforms.json', 'utf8', function (err, data) {
-        platforms = JSON.parse(data);
-        platformsHtModule.init();
-    });
-
-    // 기기 정보 로드
-    fs.readFile(__dirname+'/config/devices.json', 'utf8', function (err, data) {
-        devices = JSON.parse(data);
-        devicesHtModule.init();
-    });
-
-    // console.log('platforms=' + JSON.stringify(platforms));
+    init();
 
     // 상단 메뉴 선택
     $('a.nav-link').click(function (event) {
@@ -122,7 +96,7 @@ $(document).ready(function () {
     });
 
     $('#create').click(function () {
-        // try {
+        try {
 
             if (!gridData) {
                 alert('주문 파일을 먼저 선택하세요.');
@@ -246,11 +220,11 @@ $(document).ready(function () {
             }
 
             alert(`[${outputRoot}] 폴더에 ${shopCnt} 개의 발주서가 생성되었습니다.`);
-        // }
-        // catch (e) {
-        //     console.log(`[${e.name}] ${e.message}`);
-        //     alert(e.message);
-        // }
+        }
+        catch (e) {
+            console.log(`[${e.name}] ${e.message}`);
+            alert(e.message);
+        }
     });
 });
 
@@ -287,6 +261,7 @@ var getTabGroup = function (tabGroup) {
             return tabGroups[key];
         }
     }
+    throw new Error(`[${tabGroup}] 탭그룹이 존재하지 않아 발주서를 생성할 수 없습니다.\n상품관리 메뉴에서 탭그룹을 먼저 추가하세요.`);
 };
 
 var getPlatform = function (platformCode) {
@@ -295,6 +270,7 @@ var getPlatform = function (platformCode) {
             return platforms[key];
         }
     }
+    throw new Error(`[${platformCode}] 플랫폼 정보가 존재하지 않아 발주서를 생성할 수 없습니다.\n상품관리 메뉴에서 플랫폼 정보를 먼저 추가하세요.`);
 };
 
 var getDevice = function (deviceCode) {
@@ -486,42 +462,40 @@ var setOrderPaperOrderRow = (orderPaperDataMap) => {
     let $row = $('#order-list');
 
     orderPaperDataMap.forEach((value, key, map) => {
-        console.log(`orderPaperDataMap.get(${key})=${JSON.stringify(orderPaperDataMap.get(key))}`);
+        // console.log(`orderPaperDataMap.get(${key})=${JSON.stringify(orderPaperDataMap.get(key))}`);
         let v = orderPaperDataMap.get(key)[0];
         let sumQuantity = v.quantity;
         let firstRow = `
-          <tr>
-            <td rowspan="${value.length}"><b>${getTabGroup(v.tabGroup).label}</b></td>
-            <td>${v.template}${v.device ? '-' : ''}${v.device}</td>
-            <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${getDevice(v.device).label || '단일'}</a></td>
-            <td class="text-right">${v.quantity}</td>
-            <td></td>
-          </tr>`;
+            <tr>
+                <td rowspan="${value.length}"><b>${getTabGroup(v.tabGroup).label}</b></td>
+                <td>${v.template}${v.device ? '-' : ''}${v.device}</td>
+                <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${getDevice(v.device).label || '단일'}</a></td>
+                <td class="text-right">${v.quantity}</td>
+                <td></td>
+            </tr>`;
         $row.append(firstRow);
 
         for (let i = 1; i < orderPaperDataMap.get(key).length; i++) {
             v = orderPaperDataMap.get(key)[i];
             sumQuantity += v.quantity;
             let otherRow = `
-              <tr>
-                <td>${v.template}${v.device ? '-' : ''}${v.device}</td>
-                <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${getDevice(v.device).label || '단일'}</a></td>
-                <td class="text-right">${v.quantity}</td>
-                <td></td>
-              </tr>`;
+                <tr>
+                    <td>${v.template}${v.device ? '-' : ''}${v.device}</td>
+                    <td><a href="#${v.template.toLowerCase()}-${v.device.toLowerCase()}">${getDevice(v.device).label || '단일'}</a></td>
+                    <td class="text-right">${v.quantity}</td>
+                    <td></td>
+                </tr>`;
             $row.append(otherRow);
         }
-        console.log(`getPlatform(${v.template}).type=${getPlatform(v.template).type}`);
+        // console.log(`getPlatform(${v.template}).type=${getPlatform(v.template).type}`);
 
-        // if (getPlatform(v.template).type === 'case') {
-            let summaryRow = `
+        let summaryRow = `
             <tr>
                 <td colspan="3" class="bg-orange"><b>${getTabGroup(v.tabGroup).label} 합계</b></td>
                 <td class="bg-orange text-right">${sumQuantity}</td>
                 <td class="bg-orange"></td>
             </tr>`;
-            $row.append(summaryRow);
-        // }
+        $row.append(summaryRow);
     });
 };
 
@@ -632,95 +606,141 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
 
 // 그리드
 let htModule = (function () {
-  const settings = {
-    container: document.getElementById('grid'),
-    $xlf: $('#xlf')
-  };
+    const settings = {
+        container: document.getElementById('grid'),
+        $xlf: $('#xlf')
+    };
 
-  const handsonTable = new Handsontable(settings.container, {
-    data: gridData,
-    // dataSchema: {
-    //     epsDesignCode: null,
-    //     templateCode: null,
-    //     designSubCode: null,
-    //     quantity: null,
-    //     request: null
-    // },
-    search: true,
-    // startRows: 0,
-    // startCols: 2,
-    width: 850,
-    height: 395,
-    colWidths: [200, 150, 140, 140, 150],
-    manualColumnResize: true,
-    rowHeights: 25,
-    rowHeaders: true,
-    colHeaders: ['EPS_DESIGN_CODE', 'TEMPLATE_CODE', 'DESIGN_SUB_CODE', 'QUANTITY', 'REQUESTER'],
-    columns: [
-      {data: 'EPS_DESIGN_CODE'},
-      {data: 'TEMPLATE_CODE'},
-      {data: 'DESIGN_SUB_CODE'},
-      {data: 'QUANTITY'},
-      {data: 'REQUESTER'}
-    ],
-    // minSpareRows: 10000,
-    maxRows: 10000
-  });
-
-  const bind = function () {
-
-    settings.$xlf.change(function (event) {
-      handleFile(event, function (json) {
-        // var str = JSON.stringify(json, null, 2);
-        // console.log('str='+str);
-        const firstKey = Object.keys(json)[0];
-        gridData = json[firstKey];
-        refresh();
-      });
+    const handsonTable = new Handsontable(settings.container, {
+        data: gridData,
+        search: true,
+        width: 850,
+        height: 395,
+        colWidths: [200, 150, 140, 140, 150],
+        manualColumnResize: true,
+        rowHeights: 25,
+        rowHeaders: true,
+        colHeaders: ['EPS_DESIGN_CODE', 'TEMPLATE_CODE', 'DESIGN_SUB_CODE', 'QUANTITY', 'REQUESTER'],
+        columns: [
+            {data: 'EPS_DESIGN_CODE'},
+            {data: 'TEMPLATE_CODE'},
+            {data: 'DESIGN_SUB_CODE'},
+            {data: 'QUANTITY'},
+            {data: 'REQUESTER'}
+        ],
+        maxRows: 10000
     });
-  };
 
-  const init = function () {
-    bind();
-  };
+    const bind = function () {
 
-  /**
-   * 그리드 새로고침 (gridData 로드)
-   */
-  const refresh = function () {
-    handsonTable.loadData(gridData);
-  };
+        settings.$xlf.change(function (event) {
+            handleFile(event, function (json) {
+                // var str = JSON.stringify(json, null, 2);
+                // console.log('str='+str);
+                const firstKey = Object.keys(json)[0];
+                gridData = json[firstKey];
+                refresh();
+            });
+        });
+    };
 
-  return {
-    init: init
-  }
+    const init = function () {
+        bind();
+    };
+
+    /**
+     * 그리드 새로고침 (gridData 로드)
+     */
+    const refresh = function () {
+        handsonTable.loadData(gridData);
+    };
+
+    return {
+        init: init
+    }
 })();
 
+$(function () {
+    htModule.init();
+});
 
-// 상품관리 그리드
+/**
+ * 상품 관리 그리드 초기화
+ */
+var init = function () {
+    // 탭그룹 정보 로드
+    let tabGroupsData = fs.readFileSync(__dirname + '/config/tabGroups.json', 'utf8');
+    tabGroups = JSON.parse(tabGroupsData);
+
+    // 플랫폼 그리드에서 탭그룹을 드롭다운 메뉴로 선택하도록 한다.
+    tabGroups = tabGroups.filter((data) => data.code);
+    tabGroupCodes = [];
+    tabGroups.forEach(function (tg) {
+        tabGroupCodes.push(tg.code);
+    });
+
+    tabGroupsHtModule.init();
+
+    // 상품 정보 로드
+    let platformsData = fs.readFileSync(__dirname + '/config/platforms.json', 'utf8');
+    platforms = JSON.parse(platformsData);
+    platformsHtModule.init();
+
+    // 기기 정보 로드
+    let devicesData = fs.readFileSync(__dirname + '/config/devices.json', 'utf8');
+    devices = JSON.parse(devicesData);
+    devicesHtModule.init();
+};
+
+// 탭그룹 관리 그리드
+const tabGroupsHtModule = (function () {
+    const settings = {
+        container: document.getElementById('tabGroup-grid')
+    };
+
+    let hot = null;
+
+    const init = function () {
+        hot = new Handsontable(settings.container, {
+            data: tabGroups,
+            search: true,
+            width: 800,
+            height: 350,
+            colWidths: [350, 350],
+            manualColumnResize: true,
+            rowHeights: 25,
+            rowHeaders: true,
+            colHeaders: ['탭 코드', '표시 이름'],
+            columns: [
+                {data: 'code'},
+                {data: 'label'}
+            ],
+            minSpareRows: 100,
+            maxRows: 30,
+            allowInsertRow: true
+        });
+    };
+
+    return {
+        init: init
+    }
+})();
+
+// 플랫폼 관리 그리드
 const platformsHtModule = (function () {
     const settings = {
         container: document.getElementById('platform-grid')
     };
 
-    let handsonTable = null;
+    let hot = null;
 
     const init = function () {
-        handsonTable = new Handsontable(settings.container, {
+        hot = new Handsontable(settings.container, {
             data: platforms,
-            // dataSchema: {
-            //     platform: null,
-            //     type: null,
-            //     label: null,
-            //     tabGroup: null,
-            //     price: null
-            // },
             search: true,
-            // startRows: 0,
-            // startCols: 2,
-            width: 850,
-            height: 395,
-            colWidths: [150, 150, 100, 200, 150],
+            width: 800,
+            height: 350,
+            colWidths: [150, 150, 100, 200, 100],
             manualColumnResize: true,
             rowHeights: 25,
             rowHeaders: true,
@@ -747,8 +767,6 @@ const platformsHtModule = (function () {
             maxRows: 100,
             allowInsertRow: true
         });
-        //handsonTable.loadData(platforms);
-        //console.log('platforms==>'+JSON.stringify(platforms));
     };
 
     return {
@@ -762,74 +780,30 @@ const devicesHtModule = (function () {
         container: document.getElementById('device-grid')
     };
 
-    const handsonTable = new Handsontable(settings.container, {
-        data: devices,
-        search: true,
-        // startRows: 0,
-        // startCols: 2,
-        width: 850,
-        height: 395,
-        colWidths: [400, 400],
-        manualColumnResize: true,
-        rowHeights: 25,
-        rowHeaders: true,
-        colHeaders: ['기기코드', '기기명'],
-        columns: [
-            {data: 'device'},
-            {data: 'label'}
-        ],
-        minSpareRows: 100,
-        maxRows: 100,
-        allowInsertRow: true
-    });
+    let hot = null;
 
     const init = function () {
-        handsonTable.loadData(devices);
-        //console.log('devices==>'+JSON.stringify(devices));
+        hot = new Handsontable(settings.container, {
+            data: devices,
+            search: true,
+            width: 800,
+            height: 350,
+            colWidths: [350, 350],
+            manualColumnResize: true,
+            rowHeights: 25,
+            rowHeaders: true,
+            colHeaders: ['기기코드', '기기명'],
+            columns: [
+                {data: 'device'},
+                {data: 'label'}
+            ],
+            minSpareRows: 100,
+            maxRows: 100,
+            allowInsertRow: true
+        });
     };
 
     return {
         init: init
     }
 })();
-
-// 탭그룹 관리 그리드
-const tabGroupsHtModule = (function () {
-    const settings = {
-        container: document.getElementById('tabGroup-grid')
-    };
-
-    const handsonTable = new Handsontable(settings.container, {
-        data: tabGroups,
-        search: true,
-        // startRows: 0,
-        // startCols: 2,
-        width: 850,
-        height: 395,
-        colWidths: [350, 400],
-        manualColumnResize: true,
-        rowHeights: 25,
-        rowHeaders: true,
-        colHeaders: ['탭 코드', '표시 이름'],
-        columns: [
-            {data: 'code'},
-            {data: 'label'}
-        ],
-        minSpareRows: 100,
-        maxRows: 30,
-        allowInsertRow: true
-    });
-
-    const init = function () {
-        handsonTable.loadData(tabGroups);
-        console.log('tabGroup==>'+JSON.stringify(tabGroups));
-    };
-
-    return {
-        init: init
-    }
-})();
-
-$(function () {
-    htModule.init();
-});

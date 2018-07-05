@@ -111,8 +111,10 @@ $(document).ready(function () {
         let fullPath = dialog.showOpenDialog({
             properties: ['openDirectory']
         });
-        $('#thumbnailRoot').val(fullPath);
-        directories.thumbnailRoot = fullPath;
+        if (fullPath) {
+            $('#thumbnailRoot').val(fullPath);
+            directories.thumbnailRoot = fullPath;
+        }
     });
 
     // 아웃풋 폴더 선택
@@ -120,8 +122,10 @@ $(document).ready(function () {
         let fullPath = dialog.showOpenDialog({
             properties: ['openDirectory']
         });
-        $('#outputRoot').val(fullPath);
-        directories.outputRoot = fullPath;
+        if (fullPath) {
+            $('#outputRoot').val(fullPath);
+            directories.outputRoot = fullPath;
+        }
     });
 
     // 발주서 생성
@@ -743,14 +747,18 @@ const tabGroupsHtModule = (function () {
             search: true,
             width: 800,
             height: 350,
-            colWidths: [350, 350],
+            colWidths: [200, 300, 200],
             manualColumnResize: true,
             rowHeights: 25,
             rowHeaders: true,
-            colHeaders: ['탭 코드', '표시 이름'],
+            colHeaders: ['탭 코드', '표시 이름', '정렬 순서'],
             columns: [
                 {data: 'code'},
-                {data: 'label'}
+                {data: 'label'},
+                {
+                    data: 'sort',
+                    type: 'numeric'
+                }
             ],
             minSpareRows: 100,
             maxRows: 30,

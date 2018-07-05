@@ -4,8 +4,9 @@ const fs = require('fs');
 const path = require('path');
 XLSX = require('xlsx');
 
-const thumbnailRoot = 'C:/thumbnail';
-const outputRoot = `C:${path.sep}발주서`;
+const {dialog} = require('electron').remote;
+
+var directories = {};
 
 var platforms = [];
 
@@ -95,6 +96,35 @@ $(document).ready(function () {
         });
     });
 
+    // 디렉토리 저장
+    $('#directorySave').click(function () {
+        fs.writeFile(__dirname+'/config/directories.json', JSON.stringify(directories), 'utf8', function (err) {
+            if (err) {
+                throw err;
+            }
+            alert('저장되었습니다.');
+        });
+    });
+
+    // 썸네일 폴더 선택
+    $('#thumbnailRootChoose').click(function () {
+        let fullPath = dialog.showOpenDialog({
+            properties: ['openDirectory']
+        });
+        $('#thumbnailRoot').val(fullPath);
+        directories.thumbnailRoot = fullPath;
+    });
+
+    // 아웃풋 폴더 선택
+    $('#outputRootChoose').click(function () {
+        let fullPath = dialog.showOpenDialog({
+            properties: ['openDirectory']
+        });
+        $('#outputRoot').val(fullPath);
+        directories.outputRoot = fullPath;
+    });
+
+    // 발주서 생성
     $('#create').click(function () {
         try {
 
@@ -219,7 +249,7 @@ $(document).ready(function () {
                 shopCnt++;
             }
 
-            alert(`[${outputRoot}] 폴더에 ${shopCnt} 개의 발주서가 생성되었습니다.`);
+            alert(`[${directories.outputRoot}] 폴더에 ${shopCnt} 개의 발주서가 생성되었습니다.`);
         }
         catch (e) {
             console.log(`[${e.name}] ${e.message}`);
@@ -338,7 +368,7 @@ var createOrderPaper = function (rawData) {
         setOrderDetailTemplateTab(orderDetailDataMap);
 
         const sep = path.sep;
-        const outputDir = outputRoot + path.sep + outputDate;
+        const outputDir = directories.outputRoot + path.sep + outputDate;
         console.log(`outputDir=${outputDir}`);
         const initDir = path.isAbsolute(outputDir) ? sep : '';
         outputDir.split(sep).reduce((parentDir, childDir) => {
@@ -565,7 +595,7 @@ let setOrderDetailTemplateTab = (orderDetailDataMap) => {
                 }
                 tabHtml += `
                     <td>
-                      <div><img src="${thumbnailRoot}/${thumbnails[thumbnailKey].template}/${thumbnails[thumbnailKey].designCode}_${thumbnails[thumbnailKey].template}_${thumbnails[thumbnailKey].designSubCode}.jpg"
+                      <div><img src="${directories.thumbnailRoot}/${thumbnails[thumbnailKey].template}/${thumbnails[thumbnailKey].designCode}_${thumbnails[thumbnailKey].template}_${thumbnails[thumbnailKey].designSubCode}.jpg"
                                 alt="${thumbnails[thumbnailKey].designCode}_${thumbnails[thumbnailKey].template}_${thumbnails[thumbnailKey].designSubCode}"
                                 onerror="this.src='http://webagency.pe.kr/thumbnail/imagenotfound.jpg'"
                                 class="thumbnail"></div>
@@ -668,6 +698,13 @@ $(function () {
  * 상품 관리 그리드 초기화
  */
 var init = function () {
+
+    fs.readFile(__dirname + '/config/directories.json', 'utf8', function (err, directoriesData) {
+        directories = JSON.parse(directoriesData);
+        $('#thumbnailRoot').val(directories.thumbnailRoot);
+        $('#outputRoot').val(directories.outputRoot);
+    });
+
     // 탭그룹 정보 로드
     let tabGroupsData = fs.readFileSync(__dirname + '/config/tabGroups.json', 'utf8');
     tabGroups = JSON.parse(tabGroupsData);

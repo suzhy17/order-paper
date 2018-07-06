@@ -6,24 +6,20 @@ XLSX = require('xlsx');
 
 const {dialog} = require('electron').remote;
 
+// 디렉토리 설정
 var directories = {};
 
-var platforms = [];
-
-var devices = [];
-
+// 탭그룹
 var tabGroups = [],
     tabGroupCodes = [];
 
-const exceptionTemplates = [
-    'BTTRY_5CA',
-    'BTTRY_10CA',
-    'ACC_COILL',
-    'ACC_CABLESB',
-    'ACC_CABLEPK'
-];
+// 플랫폼 정보
+var platforms = [];
 
+// 기기정보
+var devices = [];
 
+// 그룹으로 묶어주기
 let groupBy = function(xs, key) {
     return xs.reduce(function(rv, x) {
         (rv[x[key]] = rv[x[key]] || []).push(x);
@@ -156,6 +152,7 @@ $(document).ready(function () {
             let inputDatas = [];
             for (let i = 0; i < gridData.length; i++) {
                 let designTemplateDevice = parseEpsDesignCode(gridData[i].EPS_DESIGN_CODE);
+                console.log(`designTemplateDevice=${designTemplateDevice}`);
 
                 inputDatas[i] = {
                     shop: gridData[i].REQUESTER,
@@ -263,21 +260,29 @@ $(document).ready(function () {
 });
 
 var parseEpsDesignCode = function (epsDesignCode) {
-    let exceptionTemplate = '';
-    exceptionTemplates.forEach((templateName) => {
-        if (epsDesignCode.includes(templateName)) {
-            exceptionTemplate = templateName;
+    let etcTemplate = '';
+    // 플랫폼 타입이 etc 이면 예외타입으로 처리
+    let etcPlatforms = platforms.filter((p) => p.type === 'etc');
+    etcPlatforms.forEach((p) => {
+        console.log(`p.template=${p.platform}`);
+        if (epsDesignCode.includes(p.platform)) {
+            etcTemplate = p.platform;
         }
     });
+    //console.log(`etcTemplate=${etcTemplate}`);
 
     let arrEpsDesignCode = epsDesignCode.split('_');
 
-    if (exceptionTemplate) {
+    // arrEpsDesignCode.forEach((v) => {
+    //     console.log(`arrEpsDesignCode=${v}`);
+    // });
+
+    if (etcTemplate) {
         return {
             design: arrEpsDesignCode[0],
-            template: exceptionTemplate,
-            device: arrEpsDesignCode[2],
-            tabGroup: getPlatform(exceptionTemplate).tabGroup
+            template: etcTemplate,
+            device: arrEpsDesignCode[2] || '',
+            tabGroup: getPlatform(etcTemplate).tabGroup
         };
     } else {
         return {
@@ -800,7 +805,7 @@ const platformsHtModule = (function () {
                 {
                     data: 'type',
                     type: 'dropdown',
-                    source: ['case', 'acce']
+                    source: ['case', 'acce', 'etc']
                 },
                 {data: 'label'},
                 {
